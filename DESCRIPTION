@@ -1,0 +1,11 @@
+Package: utilityf
+Title: Useful Functions for Modeling and Plotting
+Version: 0.0.0.9000
+Authors@R: person("Kevin", "Potter", email = "kevin.w.potter@gmaile.com", role = c("aut", "cre"))
+Description: A collection of functions in R that have been very useful for
+    either mathematical modeling or plotting.
+Depends:
+    R (>= 3.2.3)
+License: MIT + file LICENSE
+LazyData: true
+RoxygenNote: 5.0.1
