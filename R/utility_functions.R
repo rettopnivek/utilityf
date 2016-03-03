@@ -19,6 +19,9 @@
 # Lookup - 10:  Calculate Standard Errors and Confidence Intervals
 # Lookup - 11:  Conversion between Degrees and Radians
 # Lookup - 12:  Conversion to Cartesian Coordinates
+# Lookup - 13:  Create a Design Matrix
+# Lookup - 14:  Softmax Function
+# Lookup - 15:  Reverse of the Softmax Function
 
 # Lookup - 01
 #' Logit Function
@@ -427,3 +430,191 @@ convertMagnitudeAngle = function( H, A, degrees = T) {
   c(a,b)
 }
 
+# Lookup - 13
+#' Create Design Matrix
+#'
+#' A function that translates a vector of categories into different
+#' types of design matrices.
+#'
+#' @param X a vector of categories
+#' @param Levels the unique values of X. If left unspecified, the
+#'   function attemps to extract, but the mappings will be based on order
+#'   of appearance.
+#' @param Mapping For 'Dummy' and "Effects' options, provides an
+#'   additional way to indicates which unique values of X should be
+#'   mapped to which columns of the design matrix.
+#'   For the 'Coef' option, provides the corresponding weight values for
+#'   the unique values of X.
+#' @param type Current options include...
+#'   \itemize{
+#'     \item 'Dummy' -> Given K levels and N trials, returns a N x (K-1)
+#'     design matrix using dummy coding (i.e. 0 and 1, with one variable).
+#'     Useful for simple effects.
+#'     \item 'Effects' -> Given K levels and N trials, returns a N x (K-1)
+#'     design matrix using effects coding (i.e. -1 and 1, with one variable
+#'     denoted solely by -1). Useful for comparisons against the grand mean.
+#'     \item 'Intercept' -> Given K levels and N trials, returns a N x K
+#'     design matrix in which each unique level has its own column (i.e. K
+#'     unique intercepts).
+#'     \item 'Coef' -> Given K levels and N trials, returns a N x 1 design
+#'     matrix in which a set of weights (specified via the Mapping variable)
+#'     are matched to the unique levels of X.
+#'   }
+#'
+#' @return A design matrix
+#' @examples
+#' # Default is dummy coding
+#' designCoding( 1:5 )
+#' # Intercept, using mapping option
+#' designCoding( 1:5, Levels = c(3,1,2,4,5), type = 'Intercept' )
+#' # Example of effects coding with the levels reversed
+#' # Note that here, mapping ranges from 0 - 4, not 1 - 5
+#' designCoding( 1:5, Mapping = 4:0, type = 'Effects' )
+#' # Coefficients
+#' set.seed(500)
+#' designCoding( 1:5, Mapping = rnorm(5), type = 'Coef' )
+#'
+#' @export
+designCoding = function( X, Levels = NULL, Mapping=NULL,
+                         type = 'Dummy' ) {
+
+  # If necessary, extract the unique values of the variable
+  if (length(Levels)==0) Levels = unique(X)
+
+  # Determine the total number of levels in the variable
+  K = length(Levels)
+
+  # Dummy coding
+  if (type=='Dummy') {
+
+    # Create a design matrix
+    out = matrix( 0, nrow = length(X), ncol = K-1 )
+
+    # Create default mapping if necessary
+    if (length(Mapping)==0) Mapping = 0:(K-1)
+
+    for (k in 1:K) {
+
+      if ( Mapping[k]!=0 ) out[X==Levels[k], Mapping[k]] = 1;
+
+    }
+
+  }
+
+  # Effects coding
+  if (type=='Effects') {
+
+    # Create a design matrix
+    out = matrix( 0, nrow = length(X), ncol = K-1 )
+
+    # Create default mapping if necessary
+    if (length(Mapping)==0) Mapping = 0:(K-1)
+
+    for (k in 1:K) {
+
+      if ( Mapping[k]==0 ) out[X==Levels[k]] = -1;
+      if ( Mapping[k]!=0 ) out[X==Levels[k], Mapping[k]] = 1;
+
+    }
+
+  }
+
+  # Intercept coding
+  if (type=='Intercept') {
+
+    # Create a design matrix
+    out = matrix( 0, nrow = length(X), ncol = K )
+
+    # Create default mapping if necessary
+    if (length(Mapping)==0) Mapping = 1:K
+
+    for (k in 1:K) {
+
+      out[X==Levels[k], Mapping[k]] = 1;
+
+    }
+
+  }
+
+  # Univariate Coefficient mapping
+  if (type=='Coef') {
+
+    if ( length(Mapping)==0) stop('Must provide weighting values')
+
+    out = matrix( 0, nrow = length(X), ncol = 1 )
+
+    for (k in 1:K) {
+      out[X==Levels[k],1] = Mapping[k]
+    }
+
+  }
+
+  out
+}
+
+# Lookup - 14
+#' Softmax Function
+#'
+#' A generalization of the logistic function takes a K-dimensional vector of
+#' arbitrary values and converts it to a K-dimensional vector of real values
+#' in the range (0,1) that sum to 1. The function is also known as the
+#' normalized exponential.
+#'
+#' The function can take either a vector of a matrix of values. If a matrix
+#' the function is applied to each row of the matrix.
+#'
+#' @param x a vector of values from -Inf to Inf.
+#'
+#' @return a vector of values from 0 to 1 that sum to 1.
+#' @examples
+#' set.seed(3902)
+#' ex = softmax( rnorm(5) )
+#' sum( ex ) # Should equal 1
+#' mat = matrix( rnorm(9), 3, 3 )
+#' ex = softmax( mat )
+#' rowSums( ex ) # Each row should sum to 1
+#' @export
+
+softmax = function(x) {
+
+  # Vector case
+  if ( is.vector( x ) ) {
+    out = exp(x)/sum( exp(x) )
+  }
+  # Matrix case
+  if ( is.matrix(x) ) {
+    out = t( apply( x, 1, function(x) exp(x)/sum( exp(x) ) ) )
+  }
+
+  out
+}
+
+# Lookup - 15
+#' Reverse of the Softmax Function
+#'
+#' A function that, given a vector of probabilities that sum to one, will
+#' determine the closest values that could be passed to the softmax function
+#' to produce those probabilities using R's optim function.
+#'
+#' @param y a vector of probabilities (positive, sum to 1).
+#' @param init the starting values for the optim function. If empty, generates
+#'   random values from a normal distribution.
+#' @param restrict a logical vector indicating whether certain values of x
+#'   should be fixed to 0.
+#'
+#' @return The output from the optim function.
+#' @examples
+#' set.seed(984)
+#' input = rnorm(5)
+#' sm = softmax( input )
+#' output = reverseSoftmax( sm )
+#' round(sm,3)
+#' round(output$par,3)
+#' @export
+
+reverseSoftmax = function(y,init=NULL,restrict=NULL) {
+
+  if (is.null(init)) init = rnorm(length(y));
+
+  optim(init, function (x) { x[restrict] = 0; sum( ( y - softmax(x) )^2 )} )
+}

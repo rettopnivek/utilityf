@@ -17,6 +17,7 @@ Returns the estimated standard error of the mean
 This function calculates the standard error of the mean.
 }
 \examples{
+1/sqrt(1000) # True value
 sem( rnorm(1000) )
 }
 
