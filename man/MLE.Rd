@@ -4,41 +4,64 @@
 \alias{MLE}
 \title{Wrapper for Maximum Likelihood Estimation}
 \usage{
-MLE(dat, st.fn, mle.fn, nRep = 4, unDef = Inf, ...)
+MLE(dat, mle_fn, st_fn, grad_fn = NULL, method = "Nelder-Mead",
+  priors = NULL, SE = T, emStop = 20, alpha = 0.95, nRep = 5, ...)
 }
 \arguments{
 \item{dat}{the data to be fitted (formats can vary).}
 
-\item{st.fn}{a function to generate a set of starting values
-(must take no parameters and output must match the input length
-for the mle.fn function).}
+\item{mle_fn}{a function to calculate the negative of the sum of the
+log-likelihood (must take three named inputs: 1. 'par' - a vector of
+parameters, 2. 'dat' - the data, 3. 'priors' - a variable for prior
+values (can be null)).}
 
-\item{mle.fn}{a function to calculate the negative of the sum of the log-likelihood
-(must take two inputs: 1. a vector of parameters, 2. the data).
-Note that other estimation methods (e.g. least-squares) can be used
-instead if the function mle.fn is defined appropriately.}
+\item{st_fn}{a function to generate a set of starting values
+(must take no parameters and output must match the input length
+for the mle_fn function).}
+
+\item{grad_fn}{an optional function that returns a vector with the
+value of the first derivative for each parameter.}
+
+\item{method}{a string giving the type of optimization routine that
+optim should use.}
+
+\item{priors}{an optional variable to allow penalized maximum likelihood.}
+
+\item{SE}{a logical value; if true, attempts to extract standard errors
+and confidence intervals for parameters.}
+
+\item{emStop}{the number of attempts to find starting values that
+produce a defined likelihood function.}
+
+\item{alpha}{the coverage interval for the confidence intervals around
+the parameters.}
 
 \item{nRep}{the number of times to run the estimation routine.
 Running the routine multiple times with dispersed starting values
 increases the chances of finding the true maximum/minimum instead of
 local maxima/minima.}
 
-\item{unDef}{the value returned by mle.fn indicating undefined values
-(default is Inf).}
-
-\item{...}{additional parameters for the optim function. For example
-additional options can be passed into the parameter 'control' as a list:
-control = list( maxit = 1000, fnscale = -1 ), which increases the
-number of iterations and use maximization instead of minimization.}
+\item{...}{additional parameters for the list of control parameters.
+For instance, the upper limit for the number of iterations the
+optimization routine uses can be increased by 'maxit = 5000'.}
 }
 \value{
-Returns a list with 4 elements:
-  MLE - a list of the successful outputs from the optim function;
-  start.val - a matrix of the starting values for each successful
-    run;
-  logLikSum - a vector of the mle.fn function value for each
-    successful run;
-  run.time - The amount of time the algorithm took.
+Returns a list consisting of
+\describe{
+  \item{\code{param}}{a vector of the best-fitting parameter estimates.}
+  \item{\code{logLik}}{the value for the sum of the log-likelihoods.}
+  \item{\code{startVal}}{the vector of starting values used for the
+    parameters.}
+  \item{\code{convergenceCheck}}{a numerical code, when equal to 0
+    indicates the model successfully converged.}
+  \item{\code{hessianMatrix}}{the matrix for the hessian.}
+  \item{\code{SE}}{a vector of standard errors for the parameters.}
+  \item{\code{CI}}{a matrix with the lower and upper bounds for the
+    confidence intervals around each parameter.}
+  \item{\code{runTime}}{the time interval it took to estimate the
+    parameters.}
+  \item{\code{runTime}}{the original output given by \code{optim}.}
+}
 }
 \description{
 This function allows multiple runs of the optim function
@@ -46,12 +69,10 @@ with random starting values to better control for local
 maxima/minima.
 }
 \examples{
-mle.fn = function(par,dat) -sum(dnorm(dat,par[1],exp(par[2]),log=T)) # Likelihood function
-st.fn = function() runif( 2, c(50,0),c(150,3) ) # Starting values function
+mle_fn = function(par,dat,priors=NULL) sum(dnorm(dat,par[1],exp(par[2]),log=T)) # Likelihood function
+st_fn = function() runif( 2, c(50,log(.2)),c(150,log(3)) ) # Starting values function
 dat = rnorm( 100, 100, 15 ) # Generate data
-results = MLE( dat, st.fn, mle.fn )
-sel = which( results$logLikSum==min(results$logLikSum)) # Select the minimum
-results$MLE[[sel]] # The results
-par = results$MLE[[sel]]$par; round( c(par[1],exp(par[2])) ) # The paramaters
+results = MLE( dat, mle_fn, st_fn )
+par = results$param; round( c(par[1],exp(par[2])) ) # The paramaters
 }
 

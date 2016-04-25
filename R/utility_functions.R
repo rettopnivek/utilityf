@@ -7,23 +7,46 @@
 # library(roxygen2)
 
 # Index
-# Lookup - 01:  Logit Function
-# Lookup - 02:  Logistic Function
-# Lookup - 03:  Plotting Range Function
-# Lookup - 04:  Wrapper for Maximum Likelihood Estimation
-# Lookup - 05:  Function to Draw Ellipses
+# Lookup - 01:  Standard Error of the Mean
+# Lookup - 02:  Logit Function
+# Lookup - 03:  Logistic Function
+# Lookup - 04:  Softmax Function
+# Lookup - 05:  Reverse of the Softmax Function
 # Lookup - 06:  Error Function
+# Lookup - 07:  Plotting Range Function
+# Lookup - 08:  Generate a Blank Plot
+# Lookup - 09:  Function to Draw Ellipses
+# Lookup - 10:  Conversion between Degrees and Radians
+# Lookup - 11:  Conversion to Cartesian Coordinates
+# Lookup - 12:  Create a Design Matrix
+# Lookup - 13:  Akaike's Information Criterion
+# Lookup - 14:  Bayesion Information Criterion
+# Lookup - 15:  Wrapper for Maximum Likelihood Estimation
+
+### TO DO ###
+# Move hdi function to different package
 # Lookup - 07:  Highest Density Interval Estimator
-# Lookup - 08:  Standard Error of the Mean
-# Lookup - 09:  Generate a Blank Plot
+# Change standard error extraction to S3 method
 # Lookup - 10:  Calculate Standard Errors and Confidence Intervals
-# Lookup - 11:  Conversion between Degrees and Radians
-# Lookup - 12:  Conversion to Cartesian Coordinates
-# Lookup - 13:  Create a Design Matrix
-# Lookup - 14:  Softmax Function
-# Lookup - 15:  Reverse of the Softmax Function
 
 # Lookup - 01
+#' Standard Error of the Mean
+#'
+#' This function calculates the standard error of the mean.
+#'
+#' @param x a vector of values.
+#' @return Returns the estimated standard error of the mean
+#'   based on the values of x
+#' @export
+#' @examples
+#' 1/sqrt(1000) # True value
+#' sem( rnorm(1000) )
+
+sem = function(x) {
+  sd(x)/sqrt( length(x) )
+}
+
+# Lookup - 02
 #' Logit Function
 #'
 #' This function calculates the logit (log of the odds) of a set of probabilities.
@@ -39,14 +62,13 @@ logit = function(p) {
   log(p/(1-p))
 }
 
-# Lookup - 02
+# Lookup - 03
 #' Logistic Function
 #'
 #' This function applies the logistic function to a set of values
 #'
 #' @param x a set of values ( -Inf <= x <= Inf).
 #' @return Returns a set of probabilities.
-#' @keywords logistic
 #' @export
 #' @examples
 #' logistic( c(0,-2.197225,2.1972255,-Inf,Inf) )
@@ -55,7 +77,91 @@ logistic = function(x) {
   1/(1+exp(-x))
 }
 
-# Lookup - 03
+# Lookup - 04
+#' Softmax Function
+#'
+#' A generalization of the logistic function takes a K-dimensional vector of
+#' arbitrary values and converts it to a K-dimensional vector of real values
+#' in the range (0,1) that sum to 1. The function is also known as the
+#' normalized exponential.
+#'
+#' The function can take either a vector of a matrix of values. If a matrix
+#' the function is applied to each row of the matrix.
+#'
+#' @param x a vector of values from -Inf to Inf.
+#'
+#' @return a vector of values from 0 to 1 that sum to 1.
+#' @examples
+#' set.seed(3902)
+#' ex = softmax( rnorm(5) )
+#' sum( ex ) # Should equal 1
+#' mat = matrix( rnorm(9), 3, 3 )
+#' ex = softmax( mat )
+#' rowSums( ex ) # Each row should sum to 1
+#' @export
+
+softmax = function(x) {
+
+  # Vector case
+  if ( is.vector( x ) ) {
+    out = exp(x)/sum( exp(x) )
+  }
+  # Matrix case
+  if ( is.matrix(x) ) {
+    out = t( apply( x, 1, function(x) exp(x)/sum( exp(x) ) ) )
+  }
+
+  out
+}
+
+# Lookup - 05
+#' Reverse of the Softmax Function
+#'
+#' A function that, given a vector of probabilities that sum to one, will
+#' determine the closest values that could be passed to the softmax function
+#' to produce those probabilities using R's optim function.
+#'
+#' @param y a vector of probabilities (positive, sum to 1).
+#' @param init the starting values for the optim function. If empty, generates
+#'   random values from a normal distribution.
+#' @param restrict a logical vector indicating whether certain values of x
+#'   should be fixed to 0.
+#'
+#' @return The output from the optim function.
+#' @examples
+#' set.seed(984)
+#' input = rnorm(5)
+#' sm = softmax( input )
+#' output = reverseSoftmax( sm )
+#' round(sm,3)
+#' round(output$par,3)
+#' @export
+
+reverseSoftmax = function(y,init=NULL,restrict=NULL) {
+
+  if (is.null(init)) init = rnorm(length(y));
+
+  optim(init, function (x) { x[restrict] = 0; sum( ( y - softmax(x) )^2 )} )
+}
+
+# Lookup - 06
+#' Error Function
+#'
+#' Calculates the error function.
+#'
+#' @param x a vector of values on the real number line.
+#' @return a vector of transformed values based on the error function.
+#' @export
+#' @examples
+#' x11(); plot( c(-1,1), c(-3,3), type='n', xlab='x', ylab='erf(x)' )
+#' x = seq(-3,3,length=100)
+#' lines(x,erf(x))
+
+erf = function(x) {
+  2*pnorm( x*sqrt(2), 0, 1 ) - 1
+}
+
+# Lookup - 07
 #' Plotting Range Function
 #'
 #' This function determines the lower and upper boundaries for
@@ -82,118 +188,27 @@ lowerUpper = function(int,dat) {
   ll
 }
 
-# Lookup - 04
-#' Wrapper for Maximum Likelihood Estimation
+# Lookup - 08
+#' Generate a Blank Plot
 #'
-#' This function allows multiple runs of the optim function
-#' with random starting values to better control for local
-#' maxima/minima.
+#' This function generates a completely blank plot.
 #'
-#' @param dat the data to be fitted (formats can vary).
-#' @param st.fn a function to generate a set of starting values
-#'   (must take no parameters and output must match the input length
-#'   for the mle.fn function).
-#' @param mle.fn a function to calculate the negative of the sum of the log-likelihood
-#'   (must take two inputs: 1. a vector of parameters, 2. the data).
-#'   Note that other estimation methods (e.g. least-squares) can be used
-#'   instead if the function mle.fn is defined appropriately.
-#' @param nRep the number of times to run the estimation routine.
-#'   Running the routine multiple times with dispersed starting values
-#'   increases the chances of finding the true maximum/minimum instead of
-#'   local maxima/minima.
-#' @param unDef the value returned by mle.fn indicating undefined values
-#'   (default is Inf).
-#' @param ... additional parameters for the optim function. For example
-#'   additional options can be passed into the parameter 'control' as a list:
-#'   control = list( maxit = 1000, fnscale = -1 ), which increases the
-#'   number of iterations and use maximization instead of minimization.
-#' @return Returns a list with 4 elements:
-#'   MLE - a list of the successful outputs from the optim function;
-#'   start.val - a matrix of the starting values for each successful
-#'     run;
-#'   logLikSum - a vector of the mle.fn function value for each
-#'     successful run;
-#'   run.time - The amount of time the algorithm took.
+#' @param xDim the lower and upper boundaries for the
+#'   x-axis (default values are [0,1] ).
+#' @param yDim the lower and upper boundaries for the
+#'   y-axis (default values are [0,1] ).
+#'
+#' @return A empty plot.
 #' @export
-#' @examples
-#' mle.fn = function(par,dat) -sum(dnorm(dat,par[1],exp(par[2]),log=T)) # Likelihood function
-#' st.fn = function() runif( 2, c(50,0),c(150,3) ) # Starting values function
-#' dat = rnorm( 100, 100, 15 ) # Generate data
-#' results = MLE( dat, st.fn, mle.fn )
-#' sel = which( results$logLikSum==min(results$logLikSum)) # Select the minimum
-#' results$MLE[[sel]] # The results
-#' par = results$MLE[[sel]]$par; round( c(par[1],exp(par[2])) ) # The paramaters
 
-MLE = function(dat,st.fn,mle.fn,nRep=4,unDef=Inf,...) {
+blankPlot = function( xDim = c(0,1), yDim = c(0,1) ) {
 
-  # Check that 'stats' package is installed
-  if (!requireNamespace("stats", quietly = TRUE)) {
-    stop("The 'stats' package needed for this function to work. Please install it.",
-         call. = FALSE)
-  }
+  plot( xDim, yDim, type = 'n', ylab = ' ', xlab = ' ',
+        xaxt = 'n', yaxt = 'n', bty = 'n' )
 
-  # Track running time
-  st.time = Sys.time()
-
-  # Create set of variables to store results
-  logLikSum = rep(NA,nRep)
-  start.val = st.fn() # Determine initial length
-  start.val = matrix(NA,nRep,length(start.val))
-  results = c()
-  for (i in 1:nRep) results=c(results,list(NULL))
-
-  # Loop through repetitions
-  inc = 1
-  for (nr in 1:nRep) {
-
-    # Generate random starting values that
-    # don't produce invalid likelihoods
-    chk = unDef
-    while (chk==unDef) {
-      st = st.fn()
-      chk = mle.fn(st,dat)
-    }
-
-    # Set default value in case estimation fails
-    res = NULL
-
-    # Run estimation routine within a 'try' statement
-    # so that function won't stop if there's an error
-    res = try( optim(st,mle.fn,dat=dat,...) )
-    # print(res)
-
-    # Save results if no error occurred
-    if (is.list(res)) {
-      results[[inc]] = res
-      start.val[inc,]=st
-      logLikSum[inc]=res[['value']]
-      inc = inc + 1
-    }
-
-  }
-
-  # Remove any missing values
-  chk = which(is.na(logLikSum))
-  if (length(chk)>0) {
-    results = results[-chk]
-    start.val = start.val[-chk,]
-    logLikSum = logLikSum[-chk]
-  }
-
-  run.time = Sys.time() - st.time
-
-  # Output results as a list
-  return(
-    list(
-      MLE = results,
-      start.val = start.val,
-      logLikSum = logLikSum,
-      run.time = run.time
-    )
-  )
 }
 
-# Lookup - 05
+# Lookup - 09
 #' Function to Draw Ellipses
 #'
 #' This function will draw an ellipse on a plot that
@@ -238,140 +253,7 @@ drawEllipse = function(a, b, k = 0, Xc = 0, Yc = 0,
   if (ret) return( cbind(x,y) )
 }
 
-# Lookup - 06
-#' Error Function
-#'
-#' Calculates the error function.
-#'
-#' @param x a vector of values on the real number line.
-#' @return a vector of transformed values based on the error function.
-#' @export
-#' @examples
-#' x11(); plot( c(-1,1), c(-3,3), type='n', xlab='x', ylab='erf(x)' )
-#' x = seq(-3,3,length=100)
-#' lines(x,erf(x))
-
-erf = function(x) {
-  2*pnorm( x*sqrt(2), 0, 1 ) - 1
-}
-
-# Lookup - 07
-#' Highest Density Interval Estimator
-#'
-#' Estimates the highest density interval for a specified coverage
-#' for a sample drawn from a distribution of interest. Useful for
-#' determining credible intervals given a MCMC sample.
-#'
-#' @param sampleVec a vector of representative values from a probability
-#'   distribution.
-#' @param credMass a scalar between 0 and 1, indicating the mass
-#'   within the credible interval that is to be estimated.
-#' @return A vector containing the limits of the HDI.
-#' @section References:
-#' Kruschke, J. (2010). Doing Bayesian data analysis: A tutorial
-#'   introduction with R. Academic Press.
-#' @export
-#' @examples
-#' round( qbeta( c(.025,.975), 10, 10 ), 3 ) # True values
-#' round( hdi( rbeta(1000, 10, 10 ) ), 3 ) # Should be close
-
-hdi = function( sampleVec, credMass=0.95 ) {
-  sortedPts = sort( sampleVec )
-  ciIdxInc = floor( credMass * length( sortedPts ) )
-  nCIs = length( sortedPts ) - ciIdxInc
-  ciWidth = rep( 0 , nCIs )
-  for ( i in 1:nCIs ) {
-    ciWidth[ i ] = sortedPts[ i + ciIdxInc ] - sortedPts[ i ]
-  }
-  HDImin = sortedPts[ which.min( ciWidth ) ]
-  HDImax = sortedPts[ which.min( ciWidth ) + ciIdxInc ]
-  HDIlim = c( HDImin , HDImax )
-  return( HDIlim )
-}
-
-# Lookup - 08
-#' Standard Error of the Mean
-#'
-#' This function calculates the standard error of the mean.
-#'
-#' @param x a vector of values.
-#' @return Returns the estimated standard error of the mean
-#'   based on the values of x
-#' @export
-#' @examples
-#' 1/sqrt(1000) # True value
-#' sem( rnorm(1000) )
-
-sem = function(x) {
-  sd(x)/sqrt( length(x) )
-}
-
-# Lookup - 09
-#' Generate a Blank Plot
-#'
-#' This function generates a completely blank plot.
-#'
-#' @param xDim the lower and upper boundaries for the
-#'   x-axis (default values are [0,1] ).
-#' @param yDim the lower and upper boundaries for the
-#'   y-axis (default values are [0,1] ).
-#'
-#' @return A empty plot.
-#' @export
-
-blankPlot = function( xDim = c(0,1), yDim = c(0,1) ) {
-
-  plot( xDim, yDim, type = 'n', ylab = ' ', xlab = ' ',
-        xaxt = 'n', yaxt = 'n', bty = 'n' )
-
-}
-
 # Lookup - 10
-#' Calculate Standard Errors and Confidence Intervals
-#'
-#' This function calculates the standard errors and confidence
-#' intervals for a set of parameters extracted from an optim
-#' object.
-#'
-#' @param fit an optim object in which the option Hessian == T.
-#' @param alpha the range for the confidence interval (default
-#'   is 0.95).
-#'
-#' @return A list consisting of two objects:
-#'   SE - a vector with the standard errors for a set of parameters.
-#'   CI - a matrix with two rows, the top row contains the lower
-#'        intervals, the bottom row with the upper intervals.
-#' @examples
-#' mle.f = function( par, x ) { -sum( dnorm(x,par[1],par[2],log=T) ) }
-#' x = rnorm(100,5,2)
-#' res = optim( c(0,1), mle.f, x = x, hessian = T )
-#' mle.SE( res )
-#'
-#' mle.f = function( par, x ) { sum( dnorm(x,par[1],par[2],log=T) ) }
-#' x = rnorm(100,5,2)
-#' res = optim( c(0,1), mle.f, x = x, hessian = T, control = list( fnscale = -1 ) )
-#' mle.SE( res, alpha = .99, fnscale = -1 )
-#' @export
-
-mleSE = function( fit, alpha = .95, fnscale = 1 ) {
-
-  fisher_info = solve(fnscale*fit$hessian)
-  prop_sigma = sqrt(diag(fisher_info))
-  prop_sigma = prop_sigma
-
-  ub = qnorm( (1 - alpha)/2 )
-  lb = qnorm( (1 - alpha)/2, lower.tail = F )
-
-  upper<-fit$par+lb*prop_sigma
-  lower<-fit$par+ub*prop_sigma
-
-  return( list( SE = prop_sigma,
-                CI = matrix(c(lower,upper),2,
-                            length(prop_sigma),byrow=T) ) )
-}
-
-
-# Lookup - 11
 #' Conversion between Degrees and Radians
 #'
 #' A function to convert degrees to radians and vice versa.
@@ -402,7 +284,7 @@ degreesRadians = function( degrees = NULL, radians = NULL ) {
   out
 }
 
-# Lookup - 12
+# Lookup - 11
 #' Conversion to Cartesian Coordinates
 #'
 #' A function to use the magnitude and angle of a 2D vector
@@ -430,7 +312,7 @@ convertMagnitudeAngle = function( H, A, degrees = T) {
   c(a,b)
 }
 
-# Lookup - 13
+# Lookup - 12
 #' Create Design Matrix
 #'
 #' A function that translates a vector of categories into different
@@ -552,69 +434,148 @@ designCoding = function( X, Levels = NULL, Mapping=NULL,
   out
 }
 
-# Lookup - 14
-#' Softmax Function
-#'
-#' A generalization of the logistic function takes a K-dimensional vector of
-#' arbitrary values and converts it to a K-dimensional vector of real values
-#' in the range (0,1) that sum to 1. The function is also known as the
-#' normalized exponential.
-#'
-#' The function can take either a vector of a matrix of values. If a matrix
-#' the function is applied to each row of the matrix.
-#'
-#' @param x a vector of values from -Inf to Inf.
-#'
-#' @return a vector of values from 0 to 1 that sum to 1.
-#' @examples
-#' set.seed(3902)
-#' ex = softmax( rnorm(5) )
-#' sum( ex ) # Should equal 1
-#' mat = matrix( rnorm(9), 3, 3 )
-#' ex = softmax( mat )
-#' rowSums( ex ) # Each row should sum to 1
-#' @export
-
-softmax = function(x) {
-
-  # Vector case
-  if ( is.vector( x ) ) {
-    out = exp(x)/sum( exp(x) )
-  }
-  # Matrix case
-  if ( is.matrix(x) ) {
-    out = t( apply( x, 1, function(x) exp(x)/sum( exp(x) ) ) )
-  }
-
-  out
-}
-
 # Lookup - 15
-#' Reverse of the Softmax Function
+#' Wrapper for Maximum Likelihood Estimation
 #'
-#' A function that, given a vector of probabilities that sum to one, will
-#' determine the closest values that could be passed to the softmax function
-#' to produce those probabilities using R's optim function.
+#' This function allows multiple runs of the optim function
+#' with random starting values to better control for local
+#' maxima/minima.
 #'
-#' @param y a vector of probabilities (positive, sum to 1).
-#' @param init the starting values for the optim function. If empty, generates
-#'   random values from a normal distribution.
-#' @param restrict a logical vector indicating whether certain values of x
-#'   should be fixed to 0.
-#'
-#' @return The output from the optim function.
-#' @examples
-#' set.seed(984)
-#' input = rnorm(5)
-#' sm = softmax( input )
-#' output = reverseSoftmax( sm )
-#' round(sm,3)
-#' round(output$par,3)
+#' @param dat the data to be fitted (formats can vary).
+#' @param mle_fn a function to calculate the negative of the sum of the
+#'   log-likelihood (must take three named inputs: 1. 'par' - a vector of
+#'   parameters, 2. 'dat' - the data, 3. 'priors' - a variable for prior
+#'   values (can be null)).
+#' @param st_fn a function to generate a set of starting values
+#'   (must take no parameters and output must match the input length
+#'   for the mle_fn function).
+#' @param grad_fn an optional function that returns a vector with the
+#'   value of the first derivative for each parameter.
+#' @param method a string giving the type of optimization routine that
+#'   optim should use.
+#' @param priors an optional variable to allow penalized maximum likelihood.
+#' @param SE a logical value; if true, attempts to extract standard errors
+#'   and confidence intervals for parameters.
+#' @param emStop the number of attempts to find starting values that
+#'   produce a defined likelihood function.
+#' @param alpha the coverage interval for the confidence intervals around
+#'   the parameters.
+#' @param nRep the number of times to run the estimation routine.
+#'   Running the routine multiple times with dispersed starting values
+#'   increases the chances of finding the true maximum/minimum instead of
+#'   local maxima/minima.
+#' @param ... additional parameters for the list of control parameters.
+#'   For instance, the upper limit for the number of iterations the
+#'   optimization routine uses can be increased by 'maxit = 5000'.
+#' @return Returns a list consisting of
+#' \describe{
+#'   \item{\code{param}}{a vector of the best-fitting parameter estimates.}
+#'   \item{\code{logLik}}{the value for the sum of the log-likelihoods.}
+#'   \item{\code{startVal}}{the vector of starting values used for the
+#'     parameters.}
+#'   \item{\code{convergenceCheck}}{a numerical code, when equal to 0
+#'     indicates the model successfully converged.}
+#'   \item{\code{hessianMatrix}}{the matrix for the hessian.}
+#'   \item{\code{SE}}{a vector of standard errors for the parameters.}
+#'   \item{\code{CI}}{a matrix with the lower and upper bounds for the
+#'     confidence intervals around each parameter.}
+#'   \item{\code{runTime}}{the time interval it took to estimate the
+#'     parameters.}
+#'   \item{\code{runTime}}{the original output given by \code{optim}.}
+#' }
 #' @export
+#' @examples
+#' mle_fn = function(par,dat,priors=NULL) sum(dnorm(dat,par[1],exp(par[2]),log=T)) # Likelihood function
+#' st_fn = function() runif( 2, c(50,log(.2)),c(150,log(3)) ) # Starting values function
+#' dat = rnorm( 100, 100, 15 ) # Generate data
+#' results = MLE( dat, mle_fn, st_fn )
+#' par = results$param; round( c(par[1],exp(par[2])) ) # The paramaters
 
-reverseSoftmax = function(y,init=NULL,restrict=NULL) {
+MLE = function( dat, mle_fn, st_fn, grad_fn = NULL,
+                method = 'Nelder-Mead', priors = NULL,
+                SE = T, emStop = 20, alpha = .95, nRep = 5,
+                ... ) {
 
-  if (is.null(init)) init = rnorm(length(y));
+  # Check that 'stats' package is installed
+  if (!requireNamespace("stats", quietly = TRUE)) {
+    stop("The 'stats' package is needed for this function to work. Please install it.",
+         call. = FALSE)
+  }
 
-  optim(init, function (x) { x[restrict] = 0; sum( ( y - softmax(x) )^2 )} )
+  startTime = Sys.time()
+
+  # Repeat data as a list nRep times
+  datList = datList = rep( list(dat), nRep )
+
+  # Run maximum likelihood wrapper nRep times
+  results = lapply( datList, mleWrapper,
+                    mle_fn = mle_fn,
+                    st_fn = st_fn,
+                    grad_fn = grad_fn,
+                    priors = priors, SE = SE,
+                    method = method,
+                    emStop = emStop, ... )
+
+  # Find results with the maximum log-likelihood value
+  allLogLik = sapply( results, function(x) x[['logLik']] )
+
+  # Determine for which iterations estimation failed
+  estFail = which( is.na( allLogLik ) )
+  if ( length( estFail ) == nRep )
+    stop('Error: estimation failed for all iterations',call. = FALSE)
+
+  # Find the iteration with the
+  selBest = which.max( na.omit( allLogLik ) )
+  # If there exist multiple iterations, take first one
+  selBest = selBest[1]
+
+  # Extract iteration with maximum log-likelihood
+  resultsBest = results[[ selBest ]]
+
+  # Initialize output
+  output = list(
+    param = NA,
+    logLik = NA,
+    startVal = NA,
+    convergenceCheck = NA,
+    hessianMatrix = NA,
+    SE = NA,
+    CI = NA,
+    runTime = NA,
+    optimOutput = NA
+  )
+
+  if ( is.list( resultsBest ) ) {
+
+    output$param = resultsBest$par
+    output$logLik = resultsBest$value
+    output$startVal = resultsBest$startVal
+    output$convergenceCheck = resultsBest$convergenceCheck
+
+    if (SE) {
+
+      output$hessianMatrix = resultsBest$hessianMatrix
+
+      if ( sum( is.na( resultsBest$hessianMatrix ) ) == 0 ) {
+
+        fisher_info = solve(-resultsBest$hessianMatrix)
+        prop_sigma = sqrt(diag(fisher_info))
+
+        ub = qnorm( (1 - alpha)/2 )
+        lb = qnorm( (1 - alpha)/2, lower.tail = F )
+
+        output$SE = prop_sigma
+        output$CI = rbind( lb, ub )
+
+      }
+
+    }
+
+    output$optimOutput = resultsBest$optimOutput
+
+  }
+
+  output$runTime = Sys.time() - startTime
+
+  return( output )
 }
