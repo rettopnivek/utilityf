@@ -19,15 +19,14 @@
 # Lookup - 10:  Conversion between Degrees and Radians
 # Lookup - 11:  Conversion to Cartesian Coordinates
 # Lookup - 12:  Create a Design Matrix
-# Lookup - 13:  Akaike's Information Criterion
-# Lookup - 14:  Bayesion Information Criterion
-# Lookup - 15:  Wrapper for Maximum Likelihood Estimation
+# Lookup - 13:  Extract Unique Levels from Combined Covariates
+# Lookup - 14:  Create a Variable with Incremental Unit Intervals
+# Lookup - 15:  Calculate Select Information Criterion Values
+# Lookup - 16:  Wrapper for Maximum Likelihood Estimation
 
 ### TO DO ###
-# Move hdi function to different package
-# Lookup - 07:  Highest Density Interval Estimator
-# Change standard error extraction to S3 method
-# Lookup - 10:  Calculate Standard Errors and Confidence Intervals
+# Add S3 class and methods for MLE wrapper
+# Add function for density estimation with Epanechnikov Kernel
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -85,7 +84,7 @@ logistic = function(x) {
 #' in the range (0,1) that sum to 1. The function is also known as the
 #' normalized exponential.
 #'
-#' The function can take either a vector of a matrix of values. If a matrix
+#' The function can take either a vector or a matrix of values. If a matrix
 #' the function is applied to each row of the matrix.
 #'
 #' @param x a vector of values from -Inf to Inf.
@@ -151,11 +150,11 @@ reverseSoftmax = function(y,init=NULL,restrict=NULL) {
 #'
 #' @param x a vector of values on the real number line.
 #' @return a vector of transformed values based on the error function.
-#' @export
 #' @examples
 #' x11(); plot( c(-1,1), c(-3,3), type='n', xlab='x', ylab='erf(x)' )
 #' x = seq(-3,3,length=100)
 #' lines(x,erf(x))
+#' @export
 
 erf = function(x) {
   2*pnorm( x*sqrt(2), 0, 1 ) - 1
@@ -172,13 +171,13 @@ erf = function(x) {
 #' @param dat the vector of values over which to determine the boundaries.
 #' @return Returns a lower and upper boundary, multiples of the
 #' specified sub-interval.
-#' @export
 #' @examples
 #' d = density( rnorm(100) )
 #' x.limit = lowerUpper( .5, d$x )
 #' y.limit = lowerUpper( .1, d$y )
 #' plot( x.limit, y.limit, type='n', xlab='Values', ylab='Density' )
 #' lines(d$x,d$y)
+#' @export
 
 lowerUpper = function(int,dat) {
 
@@ -357,6 +356,7 @@ convertMagnitudeAngle = function( H, A, degrees = T) {
 #' designCoding( 1:5, Mapping = rnorm(5), type = 'Coef' )
 #'
 #' @export
+
 designCoding = function( X, Levels = NULL, Mapping=NULL,
                          type = 'Dummy' ) {
 
@@ -431,10 +431,131 @@ designCoding = function( X, Levels = NULL, Mapping=NULL,
 
   }
 
-  out
+  return( out )
 }
 
+# Lookup - 13
+#' Extract Unique Levels from Combined Covariates
+#'
+#' This function creates a single variable with a set of unique levels based
+#' on a set of covariates, the number of all possible combinations for each
+#' of the covariates
+#'
+#' @param mat a matrix of the covariates of interest
+#' @return Returns a vector indicating the corresponding combination of
+#' levels for each observation.
+#' @examples
+#' # Create an example matrix of covariates with differing levels
+#' mat = cbind( rep( c(0,1), 3 ), rep( c(0,1,0), each = 2 ) )
+#' ex = covCreate( mat ); print( ex )
+#' @export
+
+covCreate = function(mat) {
+
+  # Determine the different levels for each covariate
+  lstLevel = lapply(as.data.frame(mat),unique)
+
+  # Determine the possible combinations of the different covariates
+  unq = expand.grid(lstLevel)
+  Levels = 1:nrow(unq)
+
+  # Output variable
+  out = numeric( nrow(mat) )
+
+  for ( k in Levels ) {
+
+    for ( n in 1:nrow(mat) ) {
+      if ( sum(mat[n,] == unq[k,])==ncol(mat) ) out[n] = k
+    }
+  }
+
+  return( out )
+}
+
+# Lookup - 14
+#' Create a Variable with Incremental Unit Intervals
+#'
+#' A function to take a discrete variable and generate a new variable
+#' with the same number of levels whose values increase in unit
+#' increments. This is useful, for instance, if you have a variable
+#' encoding irregular subject ID numbers that you would like to use
+#' for indexing purposes.
+#'
+#' @param x a vector of values
+#' @return Returns a vector of matching length to \code{x} with incremental
+#' unit intervals corresponding to each level of the original variable.
+#' @examples
+#' x = c( 2320, 1038, 3010, 7503 )
+#' print( createIncrement(x) )
+#' @export
+
+createIncrement = function(x) {
+
+  # Determine the total number of original values
+  curVal = sort( unique( x ) )
+  newVal = 1:length(curVal) # Create regular increments
+  newX = numeric( length( x ) )
+  for (i in 1:length(curVal)) {
+    sel = x == curVal[i]
+    newX[sel] = newVal[i]
+  }
+
+  return( newX )
+}
+
+
 # Lookup - 15
+#' Calculate Select Information Criterion Values
+#'
+#' A function that calculates either Akaike's Information Criterion (AIC)
+#' with a correction or the Bayesian Information Criterion (BIC).
+#'
+#' @param logLik a log-likelihood value.
+#' @param k the number of free parameters for the model.
+#' @param n the number of observations in the sample.
+#' @param type indicates whether the 'AICc' or 'BIC' value should be returned.
+#'
+#' @details Given a summed log-likelihood \eqn{L} from a model and \eqn{K} free
+#'   parameters, the AIC is \deqn{ 2K - 2L. } A correction for finite samples is
+#'   recommended (e.g. Burnham & Anderson, 2002), and for \eqn{N} observations
+#'   the new equation is \deqn{ 2K - 2L + \frac{2K(K+1)}{N+K+1}. } The formula
+#'   for the BIC is \deqn{ log(N)K - 2L. } For both criterions, models with
+#'   smaller values are to be preferred.
+#' @references
+#' Akaike, H. (1973). Information theory and an extension of the maximum likelihood
+#'   principle. In B. N. Petrov & F. Caski (Eds.), Proceedings of the Second
+#'   International Symposium on Information Theory (pp. 267-281). Budapest:Akademiai
+#'   Kiado.
+#'
+#' Burnham, K. P., & Anderson, D. R. (2002). Model selection and multimodel inference:
+#'   A practical information-theoretic approach. New York: Springer-Verlag.
+#'
+#' Schwarz, G. (1978). Estimating the dimension of a model. Annals of Statistics, 6,
+#'   461-464.
+#' @return A value for either the AICc or the BIC.
+#' @examples
+#' N = 100; K = 2
+#' x = rnorm( 100, 1, 2 )
+#' m1 = sum( dnorm( x, 0, 1, log = T ) )
+#' m2 = sum( dnorm( x, 1, 2, log = T ) )
+#' # AIC values comparing the two models
+#' print( round( infoCrit( c(m1,m2), K, N ), 2 ) )
+#' # BIC values comparing the two models
+#' print( round( infoCrit( c(m1,m2), K, N ), 2 ), type = 'BIC' )
+#' @export
+
+infoCrit = function( logLik, k, n, type = 'AICc' ) {
+
+  # Initialize output
+  out = NA
+
+  if ( type == 'AICc' ) out = AICc_val( logLik, k, n )
+  if ( type == 'BIC' ) out = BIC_val( logLik, k, n )
+
+  return( out )
+}
+
+# Lookup - 16
 #' Wrapper for Maximum Likelihood Estimation
 #'
 #' This function allows multiple runs of the optim function
@@ -453,7 +574,7 @@ designCoding = function( X, Levels = NULL, Mapping=NULL,
 #'   value of the first derivative for each parameter.
 #' @param method a string giving the type of optimization routine that
 #'   optim should use.
-#' @param priors an optional variable to allow penalized maximum likelihood.
+#' @param priors an optional variable to allow for penalized maximum likelihood.
 #' @param SE a logical value; if true, attempts to extract standard errors
 #'   and confidence intervals for parameters.
 #' @param emStop the number of attempts to find starting values that
@@ -466,7 +587,7 @@ designCoding = function( X, Levels = NULL, Mapping=NULL,
 #'   local maxima/minima.
 #' @param ... additional parameters for the list of control parameters.
 #'   For instance, the upper limit for the number of iterations the
-#'   optimization routine uses can be increased by 'maxit = 5000'.
+#'   optimization routine uses can be increased to 10,000 by \code{maxit = 10000}.
 #' @return Returns a list consisting of
 #' \describe{
 #'   \item{\code{param}}{a vector of the best-fitting parameter estimates.}
@@ -483,13 +604,13 @@ designCoding = function( X, Levels = NULL, Mapping=NULL,
 #'     parameters.}
 #'   \item{\code{runTime}}{the original output given by \code{optim}.}
 #' }
-#' @export
 #' @examples
 #' mle_fn = function(par,dat,priors=NULL) sum(dnorm(dat,par[1],exp(par[2]),log=T)) # Likelihood function
 #' st_fn = function() runif( 2, c(50,log(.2)),c(150,log(3)) ) # Starting values function
 #' dat = rnorm( 100, 100, 15 ) # Generate data
 #' results = MLE( dat, mle_fn, st_fn )
 #' par = results$param; round( c(par[1],exp(par[2])) ) # The paramaters
+#' @export
 
 MLE = function( dat, mle_fn, st_fn, grad_fn = NULL,
                 method = 'Nelder-Mead', priors = NULL,
@@ -561,8 +682,8 @@ MLE = function( dat, mle_fn, st_fn, grad_fn = NULL,
         fisher_info = solve(-resultsBest$hessianMatrix)
         prop_sigma = sqrt(diag(fisher_info))
 
-        ub = qnorm( (1 - alpha)/2 )
-        lb = qnorm( (1 - alpha)/2, lower.tail = F )
+        ub = resultsBest$param + qnorm( (1 - alpha)/2 )*prop_sigma
+        lb = resultsBest$param - qnorm( (1 - alpha)/2, lower.tail = F )*prop_sigma
 
         output$SE = prop_sigma
         output$CI = rbind( lb, ub )

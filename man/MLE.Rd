@@ -25,7 +25,7 @@ value of the first derivative for each parameter.}
 \item{method}{a string giving the type of optimization routine that
 optim should use.}
 
-\item{priors}{an optional variable to allow penalized maximum likelihood.}
+\item{priors}{an optional variable to allow for penalized maximum likelihood.}
 
 \item{SE}{a logical value; if true, attempts to extract standard errors
 and confidence intervals for parameters.}
@@ -43,7 +43,7 @@ local maxima/minima.}
 
 \item{...}{additional parameters for the list of control parameters.
 For instance, the upper limit for the number of iterations the
-optimization routine uses can be increased by 'maxit = 5000'.}
+optimization routine uses can be increased to 10,000 by \code{maxit = 10000}.}
 }
 \value{
 Returns a list consisting of

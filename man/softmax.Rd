@@ -19,7 +19,7 @@ in the range (0,1) that sum to 1. The function is also known as the
 normalized exponential.
 }
 \details{
-The function can take either a vector of a matrix of values. If a matrix
+The function can take either a vector or a matrix of values. If a matrix
 the function is applied to each row of the matrix.
 }
 \examples{
