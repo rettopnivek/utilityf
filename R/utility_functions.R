@@ -26,7 +26,6 @@
 
 ### TO DO ###
 # Add S3 class and methods for MLE wrapper
-# Add function for density estimation with Epanechnikov Kernel
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -592,7 +591,7 @@ infoCrit = function( logLik, k, n, type = 'AICc' ) {
 #' \describe{
 #'   \item{\code{param}}{a vector of the best-fitting parameter estimates.}
 #'   \item{\code{logLik}}{the value for the sum of the log-likelihoods.}
-#'   \item{\code{startVal}}{the vector of starting values used for the
+ #'   \item{\code{startVal}}{the vector of starting values used for the
 #'     parameters.}
 #'   \item{\code{convergenceCheck}}{a numerical code, when equal to 0
 #'     indicates the model successfully converged.}
@@ -679,11 +678,27 @@ MLE = function( dat, mle_fn, st_fn, grad_fn = NULL,
 
       if ( sum( is.na( resultsBest$hessianMatrix ) ) == 0 ) {
 
-        fisher_info = solve(-resultsBest$hessianMatrix)
-        prop_sigma = sqrt(diag(fisher_info))
+        # Attempt to calculate the Fisher information matrix
+        fisher_info = try( solve(-resultsBest$hessianMatrix),
+             silent = T );
 
-        ub = resultsBest$param + qnorm( (1 - alpha)/2 )*prop_sigma
-        lb = resultsBest$param - qnorm( (1 - alpha)/2, lower.tail = F )*prop_sigma
+        if ( is.character( fisher_info ) ) {
+
+          prop_sigma = NA;
+          ub = lb = NA;
+
+        } else {
+          # Calculate standard error
+          prop_sigma = sqrt(diag(fisher_info))
+
+          # Calculate critical value
+          crt = abs( qnorm( (1-alpha)/2 ) )
+
+          # Calculate confidence interval
+          lb = resultsBest$param - crt*prop_sigma
+          ub = resultsBest$param + crt*prop_sigma
+
+        }
 
         output$SE = prop_sigma
         output$CI = rbind( lb, ub )
