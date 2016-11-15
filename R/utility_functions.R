@@ -23,9 +23,8 @@
 # Lookup - 14:  Create a Variable with Incremental Unit Intervals
 # Lookup - 15:  Calculate Select Information Criterion Values
 # Lookup - 16:  Wrapper for Maximum Likelihood Estimation
-
-### TO DO ###
-# Add S3 class and methods for MLE wrapper
+# Lookup - 17:  Draw a Violin Plot
+# Lookup - 18:  Find the Mode
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -714,4 +713,122 @@ MLE = function( dat, mle_fn, st_fn, grad_fn = NULL,
   output$runTime = Sys.time() - startTime
 
   return( output )
+}
+
+# Lookup - 17
+#' Draw a Violin Plot
+#'
+#' Adds a violin plot to an already existing figure.
+#'
+#' @param x the vector of values used to create the
+#'   violin plot.
+#' @param pos the x-axis position at which to draw the
+#'   violin plot
+#' @param scaleH the maximum half-width of the violin plot.
+#' @param interval allows for extra options governing ways
+#'   to restrict the violin plot to a  desired sub-interval.
+#'   \describe{
+#'     \item{\code{crit}}{a critical value or pair of values
+#'       that determines the sub-interval to plot over.}
+#'     \item{\code{type}}{when \code{crit} takes on a single
+#'       value, 'greater' restricts the sub-interval to values
+#'       larger than \code{crit},'less' to values below
+#'       \code{crit}.}
+#'     \item{\code{out}}{a logical value; if true, the
+#'       function returns the proportion of values above,
+#'       below, or within \code{crit}.}
+#'   }
+#' @param ... additional plotting parameters for \code{polygon}.
+#' @return If \code{out} is true, returns the proportion of values
+#'   in \code{x} above, below, or within the interval defined by
+#'   \code{crit}.
+#' @examples
+#' x = rnorm(100)
+#' blankPlot(yDim=c(-6,6))
+#' crit = mean(x)
+#' violinPlot( x, .5, interval = list( crit = crit ), col = 'grey',
+#'   border = NA )
+#' violinPlot( x, .5, lwd = 2 )
+#' @export
+
+violinPlot = function( x, pos, scaleH = .5,
+                       interval = list( ), ... ) {
+
+  # Set default options for graphing a specific interval
+  if ( length( interval$crit ) == 0 ) crit = NULL else
+    crit = interval$crit
+  if ( length( interval$type ) == 0 ) type = 'greater' else
+    type = interval$type
+  if ( length( interval$out ) == 0 ) out = F else
+    out = interval$out
+
+  # Calculate density
+  den = density( x )
+
+  # Restrict to a specific interval
+  if ( length(crit) == 2 ) {
+    sel = den$x >= crit[1] & den$x <= crit[2]
+    PostProb = sum( x >= crit[1] & x <= crit[2] )/length(x)
+  }
+  # Restrict to a specific half
+  if ( length(crit) == 1 ) {
+    if (type=='greater') {
+      sel = den$x > crit
+      PostProb = sum( x > crit )/length(x)
+    }
+    if (type=='less') {
+      sel = den$x < crit
+      PostProb = sum( x < crit )/length(x)
+    }
+  }
+  # No interval
+  if ( length(crit) == 0 ) {
+    sel = rep( T, length( den$x ) )
+    PostProb = 1
+  }
+
+  den$y = den$y/max(den$y); den$y = den$y*scaleH;
+  xa = c( -den$y[sel], rev(den$y[sel]) ) + pos
+  ya = c( den$x[sel], rev(den$x[sel]) )
+  polygon( xa, ya, ... )
+
+  if ( out ) return( PostProb )
+}
+
+# Lookup - 18
+#' Find the Mode
+#'
+#' This function determines the mode for a vector.
+#'
+#' @param x a vector (can be numeric or a set of strings).
+#' @param discrete a logical value; if true, an empirical
+#'   estimate of the probability mass function is used to
+#'   determine the mode. If false, an empirical estimate of
+#'   the probability density function is used instead.
+#' @param ... additional options for the \code{density}
+#'   function.
+#' @return Returns the estimated mode for the vector.
+#' @export
+#' @examples
+#' x = rnorm(100)
+#' findMode(x)
+#' x = rbinom(10,20,.5)
+#' findMode(x,discrete=T)
+#' x = c( 'cat','dog','cat','mouse')
+#' findMode(x,discrete=T)
+
+findMode = function( x, discrete = F, ... ) {
+
+  if ( discrete ) {
+
+    epmf = table( x )/length( x )
+    md = names( which( epmf == max( epmf ) ) )
+    if ( mode( x ) == 'numeric' ) md = as.numeric( md )
+
+  } else {
+    epdf = density(x,...);
+    md = epdf$x[ which( max(epdf$y) == epdf$y ) ]
+  }
+
+  return( md )
 }

@@ -12,7 +12,7 @@ The program R ( version >= 3.0 )
 
 To easily install the 'utilityf' package, you'll need the 'devtools' package:  
 ```
-install.packages(devtools)
+install.packages("devtools")
 library(devtools)
 ```
 
