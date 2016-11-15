@@ -720,11 +720,16 @@ MLE = function( dat, mle_fn, st_fn, grad_fn = NULL,
 #'
 #' Adds a violin plot to an already existing figure.
 #'
-#' @param x the vector of values used to create the
-#'   violin plot.
+#' @param x a vector of values used to create the
+#'   violin plot, or a named list where \code{X} is
+#'   the x-axis values and \code{y} is the associated
+#'   density.
 #' @param pos the x-axis position at which to draw the
 #'   violin plot
 #' @param scaleH the maximum half-width of the violin plot.
+#' @param est a logical value; if true, the density is
+#'   empirically estimated, otherwise the density is
+#'   extracted from the list \code{x}.
 #' @param interval allows for extra options governing ways
 #'   to restrict the violin plot to a  desired sub-interval.
 #'   \describe{
@@ -751,7 +756,7 @@ MLE = function( dat, mle_fn, st_fn, grad_fn = NULL,
 #' violinPlot( x, .5, lwd = 2 )
 #' @export
 
-violinPlot = function( x, pos, scaleH = .5,
+violinPlot = function( x, pos, scaleH = .5, est = T,
                        interval = list( ), ... ) {
 
   # Set default options for graphing a specific interval
@@ -763,7 +768,7 @@ violinPlot = function( x, pos, scaleH = .5,
     out = interval$out
 
   # Calculate density
-  den = density( x )
+  if (est) den = density( x ) else { den = x; x = den$x }
 
   # Restrict to a specific interval
   if ( length(crit) == 2 ) {

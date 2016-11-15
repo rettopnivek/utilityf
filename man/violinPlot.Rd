@@ -4,16 +4,22 @@
 \alias{violinPlot}
 \title{Draw a Violin Plot}
 \usage{
-violinPlot(x, pos, scaleH = 0.5, interval = list(), ...)
+violinPlot(x, pos, scaleH = 0.5, est = T, interval = list(), ...)
 }
 \arguments{
-\item{x}{the vector of values used to create the
-violin plot.}
+\item{x}{a vector of values used to create the
+violin plot, or a named list where \code{X} is
+the x-axis values and \code{y} is the associated
+density.}
 
 \item{pos}{the x-axis position at which to draw the
 violin plot}
 
 \item{scaleH}{the maximum half-width of the violin plot.}
+
+\item{est}{a logical value; if true, the density is
+empirically estimated, otherwise the density is
+extracted from the list \code{x}.}
 
 \item{interval}{allows for extra options governing ways
 to restrict the violin plot to a  desired sub-interval.
