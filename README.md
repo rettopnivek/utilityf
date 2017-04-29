@@ -21,7 +21,7 @@ The 'utilityf' package can then be installed via the following command:
 install_github("rettopnivek/utilityf")
 ```
 
-### Using the package
+## Using the package
 
 To load the package:
 ```
@@ -33,10 +33,11 @@ To list the available functions:
 ls(pos = "package:utilityf")
 ```
 
-Details on a specific function can be obtained via:
+Details and examples for a specific function can be obtained via:
 ```
-help( "function_name" )
+help( "function" )
 ```
+subsituting the appropriate function name for "function".
 
 ## Authors
 
