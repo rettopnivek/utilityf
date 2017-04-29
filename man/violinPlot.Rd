@@ -35,12 +35,13 @@ to restrict the violin plot to a  desired sub-interval.
     below, or within \code{crit}.}
 }}
 
-\item{...}{additional plotting parameters for \code{polygon}.}
+\item{...}{additional plotting parameters for
+\code{\link[graphics]{polygon}}.}
 }
 \value{
-If \code{out} is true, returns the proportion of values
-  in \code{x} above, below, or within the interval defined by
-  \code{crit}.
+If \code{out} is set to TRUE, returns the proportion of
+  values in \code{x} above, below, or within the interval defined
+  by \code{crit}.
 }
 \description{
 Adds a violin plot to an already existing figure.
@@ -52,5 +53,6 @@ crit = mean(x)
 violinPlot( x, .5, interval = list( crit = crit ), col = 'grey',
   border = NA )
 violinPlot( x, .5, lwd = 2 )
+
 }
 

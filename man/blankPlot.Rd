@@ -8,10 +8,10 @@ blankPlot(xDim = c(0, 1), yDim = c(0, 1))
 }
 \arguments{
 \item{xDim}{the lower and upper boundaries for the
-x-axis (default values are [0,1] ).}
+x-axis.}
 
 \item{yDim}{the lower and upper boundaries for the
-y-axis (default values are [0,1] ).}
+y-axis.}
 }
 \value{
 A empty plot.

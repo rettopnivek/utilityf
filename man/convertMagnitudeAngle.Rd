@@ -20,10 +20,11 @@ A set of cartesian coordinates.
 \description{
 A function to use the magnitude and angle of a 2D vector
 and convert them to cartesian coordinates (assumes the
-vector starts at [0,0] ).
+vector starts at [0,0]).
 }
 \examples{
 cart = convertMagnitudeAngle( 2, 45 )
 print( cart )
+
 }
 

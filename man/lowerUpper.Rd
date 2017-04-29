@@ -9,11 +9,12 @@ lowerUpper(int, dat)
 \arguments{
 \item{int}{the desired sub-interval over the range.}
 
-\item{dat}{the vector of values over which to determine the boundaries.}
+\item{dat}{the vector of values over which to determine the
+boundaries.}
 }
 \value{
 Returns a lower and upper boundary, multiples of the
-specified sub-interval.
+  specified sub-interval.
 }
 \description{
 This function determines the lower and upper boundaries for
@@ -26,5 +27,6 @@ x.limit = lowerUpper( .5, d$x )
 y.limit = lowerUpper( .1, d$y )
 plot( x.limit, y.limit, type='n', xlab='Values', ylab='Density' )
 lines(d$x,d$y)
+
 }
 

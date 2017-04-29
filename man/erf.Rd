@@ -16,8 +16,9 @@ a vector of transformed values based on the error function.
 Calculates the error function.
 }
 \examples{
-x11(); plot( c(-1,1), c(-3,3), type='n', xlab='x', ylab='erf(x)' )
+plot( c(-1,1), c(-3,3), type='n', xlab='x', ylab='erf(x)' )
 x = seq(-3,3,length=100)
 lines(x,erf(x))
+
 }
 

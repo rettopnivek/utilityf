@@ -9,19 +9,20 @@ reverseSoftmax(y, init = NULL, restrict = NULL)
 \arguments{
 \item{y}{a vector of probabilities (positive, sum to 1).}
 
-\item{init}{the starting values for the optim function. If empty, generates
-random values from a normal distribution.}
+\item{init}{the starting values for the optim function. If empty,
+generates random values from a normal distribution.}
 
-\item{restrict}{a logical vector indicating whether certain values of x
-should be fixed to 0.}
+\item{restrict}{a logical vector indicating whether certain values
+of x should be fixed to 0.}
 }
 \value{
 The output from the optim function.
 }
 \description{
-A function that, given a vector of probabilities that sum to one, will
-determine the closest values that could be passed to the softmax function
-to produce those probabilities using R's optim function.
+A function that, given a vector of probabilities that sum to one,
+will determine the closest values that could be passed to the
+softmax function to produce those probabilities using the
+\code{\link[stats]{optim}} function.
 }
 \examples{
 set.seed(984)
@@ -30,5 +31,6 @@ sm = softmax( input )
 output = reverseSoftmax( sm )
 round(sm,3)
 round(output$par,3)
+
 }
 

@@ -22,9 +22,12 @@
 # Lookup - 13:  Extract Unique Levels from Combined Covariates
 # Lookup - 14:  Create a Variable with Incremental Unit Intervals
 # Lookup - 15:  Calculate Select Information Criterion Values
-# Lookup - 16:  Wrapper for Maximum Likelihood Estimation
-# Lookup - 17:  Draw a Violin Plot
-# Lookup - 18:  Find the Mode
+# Lookup - 16:  Draw a Violin Plot
+# Lookup - 17:  Find the Mode
+# Lookup - 18:  Draw Error Bars
+# Lookup - 19:  Estimate Density for Individual Observations
+# Lookup - 20:  Compute Category Proportions
+# Lookup - 21:  Template for Documentation
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -32,31 +35,38 @@
 #' This function calculates the standard error of the mean.
 #'
 #' @param x a vector of values.
+#'
 #' @return Returns the estimated standard error of the mean
 #'   based on the values of x
-#' @export
+#'
 #' @examples
 #' 1/sqrt(1000) # True value
 #' sem( rnorm(1000) )
+#'
+#' @export
 
 sem = function(x) {
-  sd(x)/sqrt( length(x) )
+  return( sd(x)/sqrt( length(x) ) )
 }
 
 # Lookup - 02
 #' Logit Function
 #'
-#' This function calculates the logit (log of the odds) of a set of probabilities.
+#' This function calculates the logit (log of the odds) of a set of
+#' probabilities.
 #'
 #' @param p a set of probabilities (0 <= p <= 1).
+#'
 #' @return Returns a set of values that now lie between -Inf and Inf.
-#' @export
+#'
 #' @examples
 #' logit( c(.5,.1,.9,0,1) )
+#'
+#' @export
 
 logit = function(p) {
   p[p<0 | p>1] = NA
-  log(p/(1-p))
+  return( log(p/(1-p)) )
 }
 
 # Lookup - 03
@@ -65,29 +75,34 @@ logit = function(p) {
 #' This function applies the logistic function to a set of values
 #'
 #' @param x a set of values ( -Inf <= x <= Inf).
+#'
 #' @return Returns a set of probabilities.
-#' @export
+#'
 #' @examples
 #' logistic( c(0,-2.197225,2.1972255,-Inf,Inf) )
+#'
+#' @export
 
 logistic = function(x) {
-  1/(1+exp(-x))
+  return( 1/(1+exp(-x)) )
 }
 
 # Lookup - 04
 #' Softmax Function
 #'
-#' A generalization of the logistic function takes a K-dimensional vector of
-#' arbitrary values and converts it to a K-dimensional vector of real values
-#' in the range (0,1) that sum to 1. The function is also known as the
-#' normalized exponential.
+#' A generalization of the logistic function takes a K-dimensional
+#' vector of arbitrary values and converts it to a K-dimensional
+#' vector of real values in the range (0,1) that sum to 1. The
+#' function is also known as the normalized exponential.
 #'
-#' The function can take either a vector or a matrix of values. If a matrix
-#' the function is applied to each row of the matrix.
+#' The function can take either a vector or a matrix of values.
+#' If a matrix is passed in, the function is applied to each row
+#' of the matrix.
 #'
 #' @param x a vector of values from -Inf to Inf.
 #'
 #' @return a vector of values from 0 to 1 that sum to 1.
+#'
 #' @examples
 #' set.seed(3902)
 #' ex = softmax( rnorm(5) )
@@ -95,6 +110,7 @@ logistic = function(x) {
 #' mat = matrix( rnorm(9), 3, 3 )
 #' ex = softmax( mat )
 #' rowSums( ex ) # Each row should sum to 1
+#'
 #' @export
 
 softmax = function(x) {
@@ -108,23 +124,25 @@ softmax = function(x) {
     out = t( apply( x, 1, function(x) exp(x)/sum( exp(x) ) ) )
   }
 
-  out
+  return( out )
 }
 
 # Lookup - 05
 #' Reverse of the Softmax Function
 #'
-#' A function that, given a vector of probabilities that sum to one, will
-#' determine the closest values that could be passed to the softmax function
-#' to produce those probabilities using R's optim function.
+#' A function that, given a vector of probabilities that sum to one,
+#' will determine the closest values that could be passed to the
+#' softmax function to produce those probabilities using the
+#' \code{\link[stats]{optim}} function.
 #'
 #' @param y a vector of probabilities (positive, sum to 1).
-#' @param init the starting values for the optim function. If empty, generates
-#'   random values from a normal distribution.
-#' @param restrict a logical vector indicating whether certain values of x
-#'   should be fixed to 0.
+#' @param init the starting values for the optim function. If empty,
+#'   generates random values from a normal distribution.
+#' @param restrict a logical vector indicating whether certain values
+#'   of x should be fixed to 0.
 #'
 #' @return The output from the optim function.
+#'
 #' @examples
 #' set.seed(984)
 #' input = rnorm(5)
@@ -132,13 +150,20 @@ softmax = function(x) {
 #' output = reverseSoftmax( sm )
 #' round(sm,3)
 #' round(output$par,3)
+#'
 #' @export
 
 reverseSoftmax = function(y,init=NULL,restrict=NULL) {
 
   if (is.null(init)) init = rnorm(length(y));
 
-  optim(init, function (x) { x[restrict] = 0; sum( ( y - softmax(x) )^2 )} )
+  # Least-squares difference
+  f = function (x) { x[restrict] = 0; sum( ( y - softmax(x) )^2 )}
+
+  # Minimize function
+  out = optim(init, f )
+
+  return( out )
 }
 
 # Lookup - 06
@@ -147,15 +172,18 @@ reverseSoftmax = function(y,init=NULL,restrict=NULL) {
 #' Calculates the error function.
 #'
 #' @param x a vector of values on the real number line.
+#'
 #' @return a vector of transformed values based on the error function.
+#'
 #' @examples
-#' x11(); plot( c(-1,1), c(-3,3), type='n', xlab='x', ylab='erf(x)' )
+#' plot( c(-1,1), c(-3,3), type='n', xlab='x', ylab='erf(x)' )
 #' x = seq(-3,3,length=100)
 #' lines(x,erf(x))
+#'
 #' @export
 
 erf = function(x) {
-  2*pnorm( x*sqrt(2), 0, 1 ) - 1
+  return( 2*pnorm( x*sqrt(2), 0, 1 ) - 1 )
 }
 
 # Lookup - 07
@@ -166,15 +194,19 @@ erf = function(x) {
 #' plotting purposes.
 #'
 #' @param int the desired sub-interval over the range.
-#' @param dat the vector of values over which to determine the boundaries.
+#' @param dat the vector of values over which to determine the
+#'   boundaries.
+#'
 #' @return Returns a lower and upper boundary, multiples of the
-#' specified sub-interval.
+#'   specified sub-interval.
+#'
 #' @examples
 #' d = density( rnorm(100) )
 #' x.limit = lowerUpper( .5, d$x )
 #' y.limit = lowerUpper( .1, d$y )
 #' plot( x.limit, y.limit, type='n', xlab='Values', ylab='Density' )
 #' lines(d$x,d$y)
+#'
 #' @export
 
 lowerUpper = function(int,dat) {
@@ -182,7 +214,7 @@ lowerUpper = function(int,dat) {
   ll = int*floor(min(dat)/int)
   ll = c(ll,int*ceiling(max(dat)/int))
 
-  ll
+  return( ll )
 }
 
 # Lookup - 08
@@ -191,11 +223,12 @@ lowerUpper = function(int,dat) {
 #' This function generates a completely blank plot.
 #'
 #' @param xDim the lower and upper boundaries for the
-#'   x-axis (default values are [0,1] ).
+#'   x-axis.
 #' @param yDim the lower and upper boundaries for the
-#'   y-axis (default values are [0,1] ).
+#'   y-axis.
 #'
 #' @return A empty plot.
+#'
 #' @export
 
 blankPlot = function( xDim = c(0,1), yDim = c(0,1) ) {
@@ -214,26 +247,30 @@ blankPlot = function( xDim = c(0,1), yDim = c(0,1) ) {
 #' @param a the length of the x-axis vertice of the ellipse.
 #' @param b the length of the y-axis vertice of the ellipse.
 #' @param k the angle between the x-axis in the major vertice
-#'   for the ellipse (default is 0).
-#' @param Xc the center on the x-axis for the ellipse
-#'   (default is 0).
-#' @param Yc the center on the y-axis for the ellipse
-#'   (default is 0).
+#'   for the ellipse.
+#' @param Xc the center on the x-axis for the ellipse.
+#' @param Yc the center on the y-axis for the ellipse.
 #' @param deg if TRUE, assumes k is in degrees; otherwise,
-#'   k is assumed to be in radians (default is TRUE).
+#'   k is assumed to be in radians.
 #' @param lngth the number of points to use when plotting
-#'   the ellipse (default is 100).
+#'   the ellipse.
 #' @param draw if TRUE, draws a polygon in the shape of the
-#'   ellipse on an existing plot (default is TRUE).
+#'   ellipse on an existing plot.
 #' @param ret if TRUE, returns a matrix with the x and y
-#'   values for the ellipse (default is FALSE).
+#'   values for the ellipse.
 #' @param ... additional parameters for the polygon function.
-#' @export
+#'
+#' @return If \code{ret} is set to TRUE, returns the x and y-axis
+#'   values that were passed into the \code{\link[graphics]{polygon}}
+#'   function.
+#'
 #' @examples
 #' plot( c(-1,1), c(-1,1), type='n', xlab='X-axis', ylab='Y-axis' )
 #' drawEllipse( .2, .2 )
 #' ex = drawEllipse( .5, .2, Xc = -.5, Yc = .5, k = 20, ret = T, col = 'green')
 #' drawEllipse( .05, .3, Xc = .5, Yc = -.5, k = 290, col = 'red')
+#'
+#' @export
 
 drawEllipse = function(a, b, k = 0, Xc = 0, Yc = 0,
                        deg = T, lngth = 100, draw = T,
@@ -259,11 +296,13 @@ drawEllipse = function(a, b, k = 0, Xc = 0, Yc = 0,
 #' @param radians degrees equal 180*radians/pi.
 #'
 #' @return The converted values.
+#'
 #' @examples
 #' r = degreesRadians( degrees = 45 )
 #' print( r )
 #' d = degreesRadians( radians = .7853982 )
 #' print( d )
+#'
 #' @export
 
 degreesRadians = function( degrees = NULL, radians = NULL ) {
@@ -278,7 +317,7 @@ degreesRadians = function( degrees = NULL, radians = NULL ) {
     out = radians/(pi/180)
   }
 
-  out
+  return( out )
 }
 
 # Lookup - 11
@@ -286,7 +325,7 @@ degreesRadians = function( degrees = NULL, radians = NULL ) {
 #'
 #' A function to use the magnitude and angle of a 2D vector
 #' and convert them to cartesian coordinates (assumes the
-#' vector starts at [0,0] ).
+#' vector starts at [0,0]).
 #'
 #' @param H a magnitude.
 #' @param A an angle.
@@ -294,9 +333,11 @@ degreesRadians = function( degrees = NULL, radians = NULL ) {
 #'   degrees.
 #'
 #' @return A set of cartesian coordinates.
+#'
 #' @examples
 #' cart = convertMagnitudeAngle( 2, 45 )
 #' print( cart )
+#'
 #' @export
 
 convertMagnitudeAngle = function( H, A, degrees = T) {
@@ -306,7 +347,7 @@ convertMagnitudeAngle = function( H, A, degrees = T) {
 
   a = cos(A)*H; b = sin(A)*H
 
-  c(a,b)
+  return( c(a,b) )
 }
 
 # Lookup - 12
@@ -317,30 +358,32 @@ convertMagnitudeAngle = function( H, A, degrees = T) {
 #'
 #' @param X a vector of categories
 #' @param Levels the unique values of X. If left unspecified, the
-#'   function attemps to extract, but the mappings will be based on order
-#'   of appearance.
-#' @param Mapping For 'Dummy' and "Effects' options, provides an
-#'   additional way to indicates which unique values of X should be
-#'   mapped to which columns of the design matrix.
-#'   For the 'Coef' option, provides the corresponding weight values for
-#'   the unique values of X.
+#'   function attemps to extract, but the mappings will be based on
+#'   order of appearance.
+#' @param Mapping For \code{Dummy} and \code{Effects} options,
+#'   provides an additional way to indicates which unique values of
+#'   X should be mapped to which columns of the design matrix.
+#'   For the \code{Coef} option, provides the corresponding weight
+#'   values for the unique values of X.
 #' @param type Current options include...
 #'   \itemize{
-#'     \item 'Dummy' -> Given K levels and N trials, returns a N x (K-1)
-#'     design matrix using dummy coding (i.e. 0 and 1, with one variable).
-#'     Useful for simple effects.
-#'     \item 'Effects' -> Given K levels and N trials, returns a N x (K-1)
-#'     design matrix using effects coding (i.e. -1 and 1, with one variable
-#'     denoted solely by -1). Useful for comparisons against the grand mean.
-#'     \item 'Intercept' -> Given K levels and N trials, returns a N x K
-#'     design matrix in which each unique level has its own column (i.e. K
-#'     unique intercepts).
-#'     \item 'Coef' -> Given K levels and N trials, returns a N x 1 design
-#'     matrix in which a set of weights (specified via the Mapping variable)
-#'     are matched to the unique levels of X.
+#'     \item \code{Dummy} -> Given K levels and N trials, returns a
+#'     N x (K-1) design matrix using dummy coding (i.e. 0 and 1,
+#'     with one variable). Useful for simple effects.
+#'     \item \code{Effects} -> Given K levels and N trials, returns a
+#'     N x (K-1) design matrix using effects coding (i.e. -1 and 1,
+#'     with one variable denoted solely by -1). Useful for comparisons
+#'     against the grand mean.
+#'     \item \code{Intercept} -> Given K levels and N trials, returns a N x K
+#'     design matrix in which each unique level has its own column
+#'     (i.e. K unique intercepts).
+#'     \item \code{Coef} -> Given K levels and N trials, returns a N x 1
+#'     design matrix in which a set of weights (specified via the
+#'     \code{Mapping} variable) are matched to the unique levels of X.
 #'   }
 #'
-#' @return A design matrix
+#' @return A design matrix.
+#'
 #' @examples
 #' # Default is dummy coding
 #' designCoding( 1:5 )
@@ -435,17 +478,20 @@ designCoding = function( X, Levels = NULL, Mapping=NULL,
 # Lookup - 13
 #' Extract Unique Levels from Combined Covariates
 #'
-#' This function creates a single variable with a set of unique levels based
-#' on a set of covariates, the number of all possible combinations for each
-#' of the covariates
+#' This function creates a single variable with a set of unique
+#' levels based on a set of covariates, the number of all possible
+#' combinations for each of the covariates
 #'
-#' @param mat a matrix of the covariates of interest
+#' @param mat a matrix of the covariates of interest.
+#'
 #' @return Returns a vector indicating the corresponding combination of
-#' levels for each observation.
+#'   levels for each observation.
+#'
 #' @examples
 #' # Create an example matrix of covariates with differing levels
 #' mat = cbind( rep( c(0,1), 3 ), rep( c(0,1,0), each = 2 ) )
 #' ex = covCreate( mat ); print( ex )
+#'
 #' @export
 
 covCreate = function(mat) {
@@ -479,12 +525,16 @@ covCreate = function(mat) {
 #' encoding irregular subject ID numbers that you would like to use
 #' for indexing purposes.
 #'
-#' @param x a vector of values
-#' @return Returns a vector of matching length to \code{x} with incremental
-#' unit intervals corresponding to each level of the original variable.
+#' @param x a vector of values.
+#'
+#' @return Returns a vector of matching length to \code{x} with
+#'   incremental unit intervals corresponding to each level of the
+#'   original variable.
+#'
 #' @examples
 #' x = c( 2320, 1038, 3010, 7503 )
 #' print( createIncrement(x) )
+#'
 #' @export
 
 createIncrement = function(x) {
@@ -519,6 +569,7 @@ createIncrement = function(x) {
 #'   the new equation is \deqn{ 2K - 2L + \frac{2K(K+1)}{N+K+1}. } The formula
 #'   for the BIC is \deqn{ log(N)K - 2L. } For both criterions, models with
 #'   smaller values are to be preferred.
+#'
 #' @references
 #' Akaike, H. (1973). Information theory and an extension of the maximum likelihood
 #'   principle. In B. N. Petrov & F. Caski (Eds.), Proceedings of the Second
@@ -530,7 +581,9 @@ createIncrement = function(x) {
 #'
 #' Schwarz, G. (1978). Estimating the dimension of a model. Annals of Statistics, 6,
 #'   461-464.
+#'
 #' @return A value for either the AICc or the BIC.
+#'
 #' @examples
 #' N = 100; K = 2
 #' x = rnorm( 100, 1, 2 )
@@ -540,6 +593,7 @@ createIncrement = function(x) {
 #' print( round( infoCrit( c(m1,m2), K, N ), 2 ) )
 #' # BIC values comparing the two models
 #' print( round( infoCrit( c(m1,m2), K, N ), 2 ), type = 'BIC' )
+#'
 #' @export
 
 infoCrit = function( logLik, k, n, type = 'AICc' ) {
@@ -554,168 +608,6 @@ infoCrit = function( logLik, k, n, type = 'AICc' ) {
 }
 
 # Lookup - 16
-#' Wrapper for Maximum Likelihood Estimation
-#'
-#' This function allows multiple runs of the optim function
-#' with random starting values to better control for local
-#' maxima/minima.
-#'
-#' @param dat the data to be fitted (formats can vary).
-#' @param mle_fn a function to calculate the negative of the sum of the
-#'   log-likelihood (must take three named inputs: 1. 'par' - a vector of
-#'   parameters, 2. 'dat' - the data, 3. 'priors' - a variable for prior
-#'   values (can be null)).
-#' @param st_fn a function to generate a set of starting values
-#'   (must take no parameters and output must match the input length
-#'   for the mle_fn function).
-#' @param grad_fn an optional function that returns a vector with the
-#'   value of the first derivative for each parameter.
-#' @param method a string giving the type of optimization routine that
-#'   optim should use.
-#' @param priors an optional variable to allow for penalized maximum likelihood.
-#' @param SE a logical value; if true, attempts to extract standard errors
-#'   and confidence intervals for parameters.
-#' @param emStop the number of attempts to find starting values that
-#'   produce a defined likelihood function.
-#' @param alpha the coverage interval for the confidence intervals around
-#'   the parameters.
-#' @param nRep the number of times to run the estimation routine.
-#'   Running the routine multiple times with dispersed starting values
-#'   increases the chances of finding the true maximum/minimum instead of
-#'   local maxima/minima.
-#' @param ... additional parameters for the list of control parameters.
-#'   For instance, the upper limit for the number of iterations the
-#'   optimization routine uses can be increased to 10,000 by \code{maxit = 10000}.
-#' @return Returns a list consisting of
-#' \describe{
-#'   \item{\code{param}}{a vector of the best-fitting parameter estimates.}
-#'   \item{\code{logLik}}{the value for the sum of the log-likelihoods.}
- #'   \item{\code{startVal}}{the vector of starting values used for the
-#'     parameters.}
-#'   \item{\code{convergenceCheck}}{a numerical code, when equal to 0
-#'     indicates the model successfully converged.}
-#'   \item{\code{hessianMatrix}}{the matrix for the hessian.}
-#'   \item{\code{SE}}{a vector of standard errors for the parameters.}
-#'   \item{\code{CI}}{a matrix with the lower and upper bounds for the
-#'     confidence intervals around each parameter.}
-#'   \item{\code{runTime}}{the time interval it took to estimate the
-#'     parameters.}
-#'   \item{\code{runTime}}{the original output given by \code{optim}.}
-#' }
-#' @examples
-#' mle_fn = function(par,dat,priors=NULL) sum(dnorm(dat,par[1],exp(par[2]),log=T)) # Likelihood function
-#' st_fn = function() runif( 2, c(50,log(.2)),c(150,log(3)) ) # Starting values function
-#' dat = rnorm( 100, 100, 15 ) # Generate data
-#' results = MLE( dat, mle_fn, st_fn )
-#' par = results$param; round( c(par[1],exp(par[2])) ) # The paramaters
-#' @export
-
-MLE = function( dat, mle_fn, st_fn, grad_fn = NULL,
-                method = 'Nelder-Mead', priors = NULL,
-                SE = T, emStop = 20, alpha = .95, nRep = 5,
-                ... ) {
-
-  # Check that 'stats' package is installed
-  if (!requireNamespace("stats", quietly = TRUE)) {
-    stop("The 'stats' package is needed for this function to work. Please install it.",
-         call. = FALSE)
-  }
-
-  startTime = Sys.time()
-
-  # Repeat data as a list nRep times
-  datList = datList = rep( list(dat), nRep )
-
-  # Run maximum likelihood wrapper nRep times
-  results = lapply( datList, mleWrapper,
-                    mle_fn = mle_fn,
-                    st_fn = st_fn,
-                    grad_fn = grad_fn,
-                    priors = priors, SE = SE,
-                    method = method,
-                    emStop = emStop, ... )
-
-  # Find results with the maximum log-likelihood value
-  allLogLik = sapply( results, function(x) x[['logLik']] )
-
-  # Determine for which iterations estimation failed
-  estFail = which( is.na( allLogLik ) )
-  if ( length( estFail ) == nRep )
-    stop('Error: estimation failed for all iterations',call. = FALSE)
-
-  # Find the iteration with the
-  selBest = which.max( na.omit( allLogLik ) )
-  # If there exist multiple iterations, take first one
-  selBest = selBest[1]
-
-  # Extract iteration with maximum log-likelihood
-  resultsBest = results[[ selBest ]]
-
-  # Initialize output
-  output = list(
-    param = NA,
-    logLik = NA,
-    startVal = NA,
-    convergenceCheck = NA,
-    hessianMatrix = NA,
-    SE = NA,
-    CI = NA,
-    runTime = NA,
-    optimOutput = NA
-  )
-
-  if ( is.list( resultsBest ) ) {
-
-    output$param = resultsBest$par
-    output$logLik = resultsBest$value
-    output$startVal = resultsBest$startVal
-    output$convergenceCheck = resultsBest$convergenceCheck
-
-    if (SE) {
-
-      output$hessianMatrix = resultsBest$hessianMatrix
-
-      if ( sum( is.na( resultsBest$hessianMatrix ) ) == 0 ) {
-
-        # Attempt to calculate the Fisher information matrix
-        fisher_info = try( solve(-resultsBest$hessianMatrix),
-             silent = T );
-
-        if ( is.character( fisher_info ) ) {
-
-          prop_sigma = NA;
-          ub = lb = NA;
-
-        } else {
-          # Calculate standard error
-          prop_sigma = sqrt(diag(fisher_info))
-
-          # Calculate critical value
-          crt = abs( qnorm( (1-alpha)/2 ) )
-
-          # Calculate confidence interval
-          lb = resultsBest$param - crt*prop_sigma
-          ub = resultsBest$param + crt*prop_sigma
-
-        }
-
-        output$SE = prop_sigma
-        output$CI = rbind( lb, ub )
-
-      }
-
-    }
-
-    output$optimOutput = resultsBest$optimOutput
-
-  }
-
-  output$runTime = Sys.time() - startTime
-
-  return( output )
-}
-
-# Lookup - 17
 #' Draw a Violin Plot
 #'
 #' Adds a violin plot to an already existing figure.
@@ -743,10 +635,13 @@ MLE = function( dat, mle_fn, st_fn, grad_fn = NULL,
 #'       function returns the proportion of values above,
 #'       below, or within \code{crit}.}
 #'   }
-#' @param ... additional plotting parameters for \code{polygon}.
-#' @return If \code{out} is true, returns the proportion of values
-#'   in \code{x} above, below, or within the interval defined by
-#'   \code{crit}.
+#' @param ... additional plotting parameters for
+#'   \code{\link[graphics]{polygon}}.
+#'
+#' @return If \code{out} is set to TRUE, returns the proportion of
+#'   values in \code{x} above, below, or within the interval defined
+#'   by \code{crit}.
+#'
 #' @examples
 #' x = rnorm(100)
 #' blankPlot(yDim=c(-6,6))
@@ -754,6 +649,7 @@ MLE = function( dat, mle_fn, st_fn, grad_fn = NULL,
 #' violinPlot( x, .5, interval = list( crit = crit ), col = 'grey',
 #'   border = NA )
 #' violinPlot( x, .5, lwd = 2 )
+#'
 #' @export
 
 violinPlot = function( x, pos, scaleH = .5, est = T,
@@ -800,7 +696,7 @@ violinPlot = function( x, pos, scaleH = .5, est = T,
   if ( out ) return( PostProb )
 }
 
-# Lookup - 18
+# Lookup - 17
 #' Find the Mode
 #'
 #' This function determines the mode for a vector.
@@ -812,8 +708,9 @@ violinPlot = function( x, pos, scaleH = .5, est = T,
 #'   the probability density function is used instead.
 #' @param ... additional options for the \code{density}
 #'   function.
+#'
 #' @return Returns the estimated mode for the vector.
-#' @export
+#'
 #' @examples
 #' x = rnorm(100)
 #' findMode(x)
@@ -821,6 +718,9 @@ violinPlot = function( x, pos, scaleH = .5, est = T,
 #' findMode(x,discrete=T)
 #' x = c( 'cat','dog','cat','mouse')
 #' findMode(x,discrete=T)
+#'
+#' @export
+
 
 findMode = function( x, discrete = F, ... ) {
 
@@ -836,4 +736,151 @@ findMode = function( x, discrete = F, ... ) {
   }
 
   return( md )
+}
+
+# Lookup - 18
+#' Draw Error Bars
+#'
+#' Adds error bars to an already existing plot.
+#'
+#' @param pos a single value or a vector of N values, indicating
+#'   the position(s) at which an error bar should be drawn.
+#' @param limits a vector of 2 values or a 2 x N matrix giving the
+#'   lower and upper limits, respectively, of the uncertainty
+#'   intervals.
+#' @param flip a logical value. If true, bars are drawn horizontally
+#'   instead of vertically. In this case \code{pos} denotes the
+#'   position(s) on the y-axis. Otherwise, \code{pos} denotes the
+#'   position(s) on the x-axis.
+#' @param ... additional plotting parameters for the
+#'   \code{\link[graphics]{arrows}} function.
+#'
+#' @examples
+#' # Example of 95% versus 68% intervals for standard normal
+#' plot( c(0,1),c(-6,6),type='n',xaxt='n',xlab=' ',ylab='z-scores' )
+#' pos = c(.25,.75)
+#' limits = cbind( qnorm( c(.025,.975) ), qnorm( c(.16,.84) ) )
+#' errorBars( pos, limits, length = .05, lwd = 2 )
+#' text( pos, limits[2,], c("95%","68%"), pos = 3 )
+#' abline(h=0)
+#'
+#' @export
+
+errorBars = function( pos, limits, flip = F, ... ) {
+
+  if ( flip ) {
+    if ( is.matrix( limits ) ) {
+      arrows( limits[1,], pos,
+              limits[2,], pos, code = 3, angle = 90, ... )
+    } else {
+      arrows( limits[1], pos,
+              limits[2], pos, code = 3, angle = 90, ... )
+    }
+  } else {
+    if ( is.matrix( limits ) ) {
+      arrows( pos, limits[1,],
+              pos, limits[2,], code = 3, angle = 90, ... )
+    } else {
+      arrows( pos, limits[1],
+              pos, limits[2], code = 3, angle = 90, ... )
+    }
+  }
+
+}
+
+# Lookup - 19
+#' Estimate Density for Individual Observations
+#'
+#' Given a vector of values, computes the empirical density
+#' for each observation.
+#'
+#' @param x a numeric vector.
+#' @param ... additional parameters for the
+#'   \code{\link[stats]{density}} function.
+#'
+#' @return A list with...
+#'   \itemize{
+#'     \item x - the sorted values for the original input.
+#'     \item y - the associated empirical densities.
+#'   }
+#'
+#' @examples
+#' plot(c(-4,4),c(0,.5),type='n',ylab='Density',xlab='z-scores')
+#' x = rnorm( 100 )
+#' dp = densityPoints( x )
+#' points( dp$x, dp$y, pch = 19 )
+#'
+#' @export
+
+densityPoints = function( x, ... ) {
+
+  ed = density( x, ... )
+  af = approxfun( ed )
+  y = af( sort( x ) )
+
+  return( list( x = sort( x ), y = y ) )
+}
+
+# Lookup - 20
+#' Compute Category Proportions
+#'
+#' Given a set of posssible values, computes the proportion of
+#' values that actually occurred.
+#'
+#' @param x a vector of values.
+#' @param val a character vector with the set of possible values
+#'   that \code{x} can take on.
+#'
+#' @return Returns a vector of proportions that sum to 1.
+#'
+#' @examples
+#' x = rbinom( 100, 1, .7 )
+#' p_f( x, c("0","1") )
+#'
+#' # Multiple categories, some categories don't occur
+#' u = runif(100)
+#' x = rep( 'dog', 100 )
+#' x[ u < .33 ] = 'cat'
+#' p_f( x, c("cat","dog","bird" ) )
+#'
+#' @export
+
+p_f = function( x, val ) {
+
+  # Initialize output
+  out = numeric( length( val ) )
+  names( out ) = val
+
+  # Tally frequencies for each choice
+  freq = table( x )
+  # Compute associated proportions
+  prp = freq/sum( freq )
+
+  # Extract values
+  out[ names( prp ) ] = as.numeric( prp )
+
+  return( out )
+}
+
+# Lookup - 21
+#' Template for Documentation
+#'
+#' Prints a template for an informal way to document R functions
+#' to the console.
+#'
+#' @return Prints the template to the console window, where it
+#'   can be copied and modified by the user.
+#'
+#' @examples
+#' quick_doc_template()
+#'
+#' @export
+
+quick_doc_template = function() {
+  cat( "  # Purpose:", "\n" )
+  cat( "  # ...", "\n" )
+  cat( "  # Arguments:", "\n" )
+  cat( "  # ...", "\n" )
+  cat( "  # Returns:", "\n" )
+  cat( "  # ...", "\n" )
 }

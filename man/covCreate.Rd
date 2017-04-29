@@ -7,20 +7,21 @@
 covCreate(mat)
 }
 \arguments{
-\item{mat}{a matrix of the covariates of interest}
+\item{mat}{a matrix of the covariates of interest.}
 }
 \value{
 Returns a vector indicating the corresponding combination of
-levels for each observation.
+  levels for each observation.
 }
 \description{
-This function creates a single variable with a set of unique levels based
-on a set of covariates, the number of all possible combinations for each
-of the covariates
+This function creates a single variable with a set of unique
+levels based on a set of covariates, the number of all possible
+combinations for each of the covariates
 }
 \examples{
 # Create an example matrix of covariates with differing levels
 mat = cbind( rep( c(0,1), 3 ), rep( c(0,1,0), each = 2 ) )
 ex = covCreate( mat ); print( ex )
+
 }
 

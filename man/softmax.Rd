@@ -13,14 +13,15 @@ softmax(x)
 a vector of values from 0 to 1 that sum to 1.
 }
 \description{
-A generalization of the logistic function takes a K-dimensional vector of
-arbitrary values and converts it to a K-dimensional vector of real values
-in the range (0,1) that sum to 1. The function is also known as the
-normalized exponential.
+A generalization of the logistic function takes a K-dimensional
+vector of arbitrary values and converts it to a K-dimensional
+vector of real values in the range (0,1) that sum to 1. The
+function is also known as the normalized exponential.
 }
 \details{
-The function can take either a vector or a matrix of values. If a matrix
-the function is applied to each row of the matrix.
+The function can take either a vector or a matrix of values.
+If a matrix is passed in, the function is applied to each row
+of the matrix.
 }
 \examples{
 set.seed(3902)
@@ -29,5 +30,6 @@ sum( ex ) # Should equal 1
 mat = matrix( rnorm(9), 3, 3 )
 ex = softmax( mat )
 rowSums( ex ) # Each row should sum to 1
+
 }
 

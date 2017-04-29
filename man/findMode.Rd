@@ -30,5 +30,6 @@ x = rbinom(10,20,.5)
 findMode(x,discrete=T)
 x = c( 'cat','dog','cat','mouse')
 findMode(x,discrete=T)
+
 }
 

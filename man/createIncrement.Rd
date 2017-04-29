@@ -7,11 +7,12 @@
 createIncrement(x)
 }
 \arguments{
-\item{x}{a vector of values}
+\item{x}{a vector of values.}
 }
 \value{
-Returns a vector of matching length to \code{x} with incremental
-unit intervals corresponding to each level of the original variable.
+Returns a vector of matching length to \code{x} with
+  incremental unit intervals corresponding to each level of the
+  original variable.
 }
 \description{
 A function to take a discrete variable and generate a new variable
@@ -23,5 +24,6 @@ for indexing purposes.
 \examples{
 x = c( 2320, 1038, 3010, 7503 )
 print( createIncrement(x) )
+
 }
 

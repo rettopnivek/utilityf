@@ -10,33 +10,34 @@ designCoding(X, Levels = NULL, Mapping = NULL, type = "Dummy")
 \item{X}{a vector of categories}
 
 \item{Levels}{the unique values of X. If left unspecified, the
-function attemps to extract, but the mappings will be based on order
-of appearance.}
+function attemps to extract, but the mappings will be based on
+order of appearance.}
 
-\item{Mapping}{For 'Dummy' and "Effects' options, provides an
-additional way to indicates which unique values of X should be
-mapped to which columns of the design matrix.
-For the 'Coef' option, provides the corresponding weight values for
-the unique values of X.}
+\item{Mapping}{For \code{Dummy} and \code{Effects} options,
+provides an additional way to indicates which unique values of
+X should be mapped to which columns of the design matrix.
+For the \code{Coef} option, provides the corresponding weight
+values for the unique values of X.}
 
 \item{type}{Current options include...
 \itemize{
-  \item 'Dummy' -> Given K levels and N trials, returns a N x (K-1)
-  design matrix using dummy coding (i.e. 0 and 1, with one variable).
-  Useful for simple effects.
-  \item 'Effects' -> Given K levels and N trials, returns a N x (K-1)
-  design matrix using effects coding (i.e. -1 and 1, with one variable
-  denoted solely by -1). Useful for comparisons against the grand mean.
-  \item 'Intercept' -> Given K levels and N trials, returns a N x K
-  design matrix in which each unique level has its own column (i.e. K
-  unique intercepts).
-  \item 'Coef' -> Given K levels and N trials, returns a N x 1 design
-  matrix in which a set of weights (specified via the Mapping variable)
-  are matched to the unique levels of X.
+  \item \code{Dummy} -> Given K levels and N trials, returns a
+  N x (K-1) design matrix using dummy coding (i.e. 0 and 1,
+  with one variable). Useful for simple effects.
+  \item \code{Effects} -> Given K levels and N trials, returns a
+  N x (K-1) design matrix using effects coding (i.e. -1 and 1,
+  with one variable denoted solely by -1). Useful for comparisons
+  against the grand mean.
+  \item \code{Intercept} -> Given K levels and N trials, returns a N x K
+  design matrix in which each unique level has its own column
+  (i.e. K unique intercepts).
+  \item \code{Coef} -> Given K levels and N trials, returns a N x 1
+  design matrix in which a set of weights (specified via the
+  \code{Mapping} variable) are matched to the unique levels of X.
 }}
 }
 \value{
-A design matrix
+A design matrix.
 }
 \description{
 A function that translates a vector of categories into different

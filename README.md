@@ -1,12 +1,12 @@
 # utilityf
 
-A R package with a collection of useful functions for modeling and plotting. For instance, there are functions for calculating the standard error of the mean, plotting ellipses, determining the minimum and maximum boundaries for plots, and a wrapper for maximum likelihood estimation.
+A R package with a collection of useful functions for modeling and plotting. For instance, there are functions for calculating the standard error of the mean, plotting ellipses, creating design matrices, and determining the minimum and maximum boundaries for plots.
 
 ## Getting started
 
 ### Prerequisites
 
-The program R ( version >= 3.0 )
+The program R ( version >= 2.15.1 )
 
 ### Installation
 
@@ -16,9 +16,26 @@ install.packages("devtools")
 library(devtools)
 ```
 
-The 'utilityf' package can be installed via the following commands:  
+The 'utilityf' package can then be installed via the following command:  
 ```
 install_github("rettopnivek/utilityf")
+```
+
+### Using the package
+
+To load the package:
+```
+library(utilityf)
+```
+
+To list the available functions:
+```
+ls(pos = "package:utilityf")
+```
+
+Details on a specific function can be obtained via:
+```
+help( "function_name" )
 ```
 
 ## Authors

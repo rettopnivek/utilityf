@@ -39,6 +39,7 @@ m2 = sum( dnorm( x, 1, 2, log = T ) )
 print( round( infoCrit( c(m1,m2), K, N ), 2 ) )
 # BIC values comparing the two models
 print( round( infoCrit( c(m1,m2), K, N ), 2 ), type = 'BIC' )
+
 }
 \references{
 Akaike, H. (1973). Information theory and an extension of the maximum likelihood

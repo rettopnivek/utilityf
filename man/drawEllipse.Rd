@@ -13,27 +13,30 @@ drawEllipse(a, b, k = 0, Xc = 0, Yc = 0, deg = T, lngth = 100,
 \item{b}{the length of the y-axis vertice of the ellipse.}
 
 \item{k}{the angle between the x-axis in the major vertice
-for the ellipse (default is 0).}
+for the ellipse.}
 
-\item{Xc}{the center on the x-axis for the ellipse
-(default is 0).}
+\item{Xc}{the center on the x-axis for the ellipse.}
 
-\item{Yc}{the center on the y-axis for the ellipse
-(default is 0).}
+\item{Yc}{the center on the y-axis for the ellipse.}
 
 \item{deg}{if TRUE, assumes k is in degrees; otherwise,
-k is assumed to be in radians (default is TRUE).}
+k is assumed to be in radians.}
 
 \item{lngth}{the number of points to use when plotting
-the ellipse (default is 100).}
+the ellipse.}
 
 \item{draw}{if TRUE, draws a polygon in the shape of the
-ellipse on an existing plot (default is TRUE).}
+ellipse on an existing plot.}
 
 \item{ret}{if TRUE, returns a matrix with the x and y
-values for the ellipse (default is FALSE).}
+values for the ellipse.}
 
 \item{...}{additional parameters for the polygon function.}
+}
+\value{
+If \code{ret} is set to TRUE, returns the x and y-axis
+  values that were passed into the \code{\link[graphics]{polygon}}
+  function.
 }
 \description{
 This function will draw an ellipse on a plot that
@@ -44,5 +47,6 @@ plot( c(-1,1), c(-1,1), type='n', xlab='X-axis', ylab='Y-axis' )
 drawEllipse( .2, .2 )
 ex = drawEllipse( .5, .2, Xc = -.5, Yc = .5, k = 20, ret = T, col = 'green')
 drawEllipse( .05, .3, Xc = .5, Yc = -.5, k = 290, col = 'red')
+
 }
 
