@@ -6,7 +6,7 @@ A R package with a collection of useful functions for modeling and plotting. For
 
 ### Prerequisites
 
-The program R ( version >= 2.15.1 )
+The program R ( version >= 3.0 )
 
 ### Installation
 
@@ -33,11 +33,7 @@ To list the available functions:
 ls(pos = "package:utilityf")
 ```
 
-Details and examples for a specific function can be obtained via:
-```
-help( "function" )
-```
-subsituting the appropriate function name for "function".
+Details and examples for a specific function can be obtained via `help( "function" )` substituting the appropriate function name for "function".
 
 ## Authors
 

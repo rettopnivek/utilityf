@@ -28,6 +28,7 @@
 # Lookup - 19:  Estimate Density for Individual Observations
 # Lookup - 20:  Compute Category Proportions
 # Lookup - 21:  Template for Documentation
+# Lookup - 22:  Improved list
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -883,4 +884,57 @@ quick_doc_template = function() {
   cat( "  # ...", "\n" )
   cat( "  # Returns:", "\n" )
   cat( "  # ...", "\n" )
+}
+
+# Lookup - 22
+
+# Include function from Dirk Eddelbuettel
+# See http://stackoverflow.com/questions/1358003/tricks-to-manage-the-available-memory-in-an-r-session
+.ls.objects = function ( pos = 1, pattern, order.by,
+                         decreasing=FALSE, head=FALSE, n = 5 ) {
+
+  napply = function( names, fn)
+    sapply( names, function(x) fn( get( x, pos = pos) ) )
+
+  names = ls( pos = pos, pattern = pattern )
+  obj.class = napply( names, function(x) as.character(class(x))[1] )
+  obj.mode = napply( names, mode )
+  obj.type = ifelse( is.na(obj.class), obj.mode, obj.class )
+  obj.prettysize = napply( names, function(x) {
+    format(utils::object.size(x), units = "auto")
+    }
+  )
+  obj.size = napply( names, object.size )
+  obj.dim = t( napply( names, function(x) as.numeric(dim(x))[1:2]) )
+  vec = is.na(obj.dim)[, 1] & (obj.type != "function")
+  obj.dim[vec, 1] = napply(names, length)[vec]
+  out = data.frame( obj.type, obj.size, obj.prettysize, obj.dim )
+  names(out) = c("Type", "Size", "PrettySize", "Rows", "Columns")
+  if (!missing(order.by))
+    out = out[order(out[[order.by]], decreasing=decreasing), ]
+  if (head)
+    out = head(out, n)
+  out
+}
+
+#' Improved List of Objects
+#'
+#' A function created by Dirk Eddelbuettel that lists the objects
+#' currently in the workspace along with pertinent information.
+#'
+#' @return A list of objects in the workspace, along with their
+#' memory usage and dimensions.
+#'
+#' @section References:
+#' Eddelbuettel, D. (2009). Retrieved from http://stackoverflow.com/questions/1358003/tricks-to-manage-the-available-memory-in-an-r-session
+#'
+#' @examples
+#' x = rnorm( 100 )
+#' lsos()
+#'
+#' @export
+
+lsos = function( ..., n = 10 ) {
+  .ls.objects( ..., order.by = "Size", decreasing = TRUE,
+               head = TRUE, n = n )
 }
