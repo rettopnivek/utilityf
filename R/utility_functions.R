@@ -29,6 +29,9 @@
 # Lookup - 20:  Compute Category Proportions
 # Lookup - 21:  Template for Documentation
 # Lookup - 22:  Improved list
+# Lookup - 23:  Calculate the First Four Moments
+# Lookup - 24:  Generate Multi-line comments
+# Lookup - 25:  Generate Custom Plot Axes
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -836,17 +839,17 @@ densityPoints = function( x, ... ) {
 #'
 #' @examples
 #' x = rbinom( 100, 1, .7 )
-#' p_f( x, c("0","1") )
+#' catProp( x, c("0","1") )
 #'
 #' # Multiple categories, some categories don't occur
 #' u = runif(100)
 #' x = rep( 'dog', 100 )
 #' x[ u < .33 ] = 'cat'
-#' p_f( x, c("cat","dog","bird" ) )
+#' catProp( x, c("cat","dog","bird" ) )
 #'
 #' @export
 
-p_f = function( x, val ) {
+catProp = function( x, val ) {
 
   # Initialize output
   out = numeric( length( val ) )
@@ -873,11 +876,11 @@ p_f = function( x, val ) {
 #'   can be copied and modified by the user.
 #'
 #' @examples
-#' quick_doc_template()
+#' quickDocTemplate()
 #'
 #' @export
 
-quick_doc_template = function() {
+quickDocTemplate = function() {
   cat( "  # Purpose:", "\n" )
   cat( "  # ...", "\n" )
   cat( "  # Arguments:", "\n" )
@@ -937,4 +940,334 @@ quick_doc_template = function() {
 lsos = function( ..., n = 10 ) {
   .ls.objects( ..., order.by = "Size", decreasing = TRUE,
                head = TRUE, n = n )
+}
+
+# Lookup - 23
+#' Calculate the First Four Moments
+#'
+#' A function to compute the first four moments (i.e., the mean,
+#' variance, skew, and kurtosis) for a vector of data.
+#'
+#' @param x a numerical vector of values.
+#'
+#' @return A list consisting of...
+#'   \itemize{
+#'     \item \code{n}: The number of observations.
+#'     \item \code{mean}: The mean of the data (The 1st moment).
+#'     \item \code{var}: The variance of the data (The 2nd moment).
+#'     \item \code{sd}: The standard deviation of the data.
+#'     \item \code{skew}: The skewness of the data (The 3rd moment).
+#'     \item \code{kurtosis}: The kurtosis of the data (The
+#'       fourth moment).
+#'   }
+#'
+#' @section References:
+#' Terriberry, T. B. (2007). Computing Higher-Order Moments Online.
+#    Retrieved from https://people.xiph.org/~tterribe/notes/homs.html
+#'
+#' @examples
+#' x = rnorm( 100 )
+#' higherOrderMoments( x )
+#'
+#' @export
+
+higherOrderMoments = function( x ) {
+
+  n = 0 # Sample size
+  M = 0 # Mean
+  M2 = 0 # 2nd moment
+  M3 = 0 # 3rd moment
+  M4 = 0 # 4th moment
+
+  # Function to raise a value to a power
+  pow = function( v, a ) return( v^a )
+
+  # Loop over observations
+  for ( k in 1:length( x ) ) {
+
+    n1 = n; n = n + 1;
+    term1 = x[k] - M;
+    term2 = term1 / n;
+    term3 = term1 * term2 * n1;
+    # Update mean
+    M = M + term2;
+    # Update fourth moment
+    M4 = M4 + term3 * pow( term2, 2.0 ) * ( n*n - 3.0 * n + 3.0 ) +
+      6.0 * pow( term2, 2.0 ) * M2 - 4.0 * term2 * M3;
+    # Update third moment
+    M3 = M3 + term3 * term2 * (n - 2.0) - 3.0 * term2 * M2;
+    # Update second moment
+    M2 = M2 + term3;
+  }
+
+  # Compute descriptive statistics from moments
+  out = c(
+    n = n,
+    mean = M,
+    var = M2 / ( n - 1.0 ),
+    sd = sqrt( M2 / (n - 1.0 ) ),
+    skewness = sqrt( n ) * M3/ pow(M2, 1.5),
+    kurtosis = n*M4 / (M2*M2) - 3.0
+  )
+
+  return( out )
+}
+
+# Lookup - 24
+#' Generate Multi-line comments
+#'
+#' A function that allows the user to write multi-line
+#' comments that are not run.
+#'
+#' @param string A character string with the desired comments.
+#'
+#' @examples
+#' b("
+#' First line of comments
+#' Second line of comments
+#' ")
+#'
+#' @export
+
+b = function( string ) {
+  # Silent return
+  if (0) {
+    string
+  }
+}
+
+# Lookup - 25
+#' Generate Custom Plot Axes
+#'
+#' A function that, based on the x and y-axis boundaries,
+#' draws lines and labels for a specified set of axes.
+#'
+#' @param xl a vector with the lower and upper boundaries for the x-axis.
+#' @param yl a vector with the lower and upper boundaries for the y-axis.
+#' @param pos a vector indicating at which sides an axis should be drawn.
+#'   The possible sides are:
+#'   \enumerate{
+#'     \item Bottom (codes = \code{'Bottom'}, \code{'B'}, \code{'b'},
+#'       \code{'1'}, \code{1});
+#'     \item Left (codes = \code{'Left'}, \code{'L'}, \code{'l'},
+#'       \code{'2'}, \code{2});
+#'     \item Top (codes = \code{'Top'}, \code{'T'}, \code{'t'},
+#'       \code{'3'}, \code{3});
+#'     \item Right (codes = \code{'Right'}, \code{'R'}, \code{'r'},
+#'       \code{'4'}, \code{4});
+#'   }
+#'   The number of elements in the vector tell the function how many axes
+#'   to draw.
+#' @param lnSz the width of the axis lines.
+#' @param type the type of axis line to draw. \code{1} or \code{'extend'}
+#'   generates axis lines that extend past the boundaries, while \code{2}
+#'   or \code{'truncated'} truncates the axis lines at the boundaries.
+#' @param label the labels for the axes. Must match the length of variable
+#'   \code{pos} else a warning is generated and no labels are added.
+#' @param lbPos the line positions of the labels for the axes.
+#' @param lbSz the font-size of the labels for the axes.
+#' @param inc the increments for the axis values. Must match the length of
+#'   the variable \code{pos} else a warning is generated and no axis values
+#'   are added. Set to \code{0} to suppress the adding of axis values.
+#' @param axisLabel An optional list matching in length to the variable
+#'   \code{pos}, with each element consisting either of a list of the tick
+#'   positions and their labels for a given axis, or \code{NULL} to suppress
+#'   adding values to that axis.
+#' @param axSz the size of the font for the axis values.
+#' @param axPos the line position of the axes.
+#' @param prec the number of decimal values to report for the axis values.
+#'
+#' @examples
+#' layout( cbind( 1, 2 ) ) # 2 plotting panes
+#' xl = c(0,1); yl = c(0,1); blankPlot(xl,yl) # Empty plot
+#' customAxes( xl, yl, label = c( 'X', 'Y' ), lnSz = 2,
+#'   inc = c(.25,.25), axSz = .75 )
+#' xl = c(.5,2.5); yl = c(-1,1); blankPlot(xl,yl); abline( h = 0 )
+#' customAxes( xl, yl, pos = c(1,4), label = c( 'Conditions', 'Values' ),
+#'   lbSz = 1, lbPos = c(1,1),
+#'   axisLabel = list( list( c(1,2), c('A','B') ), NULL ),
+#'   inc = c(0,.5), axSz = .75 )
+#'
+#' @export
+customAxes = function( xl, yl,
+                       pos = c( 1, 2 ),
+                       lnSz = 2,
+                       type = 2,
+                       label = NULL,
+                       lbPos = c( 2.5, 2.5, 1, 2.5 ),
+                       lbSz = 1.5,
+                       inc = c(0,0,0,0),
+                       axisLabel = NULL,
+                       axSz = 1.25,
+                       axPos = c( -1, -1, -1, -1 ),
+                       prec = 2 ) {
+
+  # Check whether labels for axes should be added
+  labCheck = F
+  if ( !is.null( label ) ) {
+    if ( length( label ) != length( pos ) ) {
+      warning( "Number of labels does not match number of specified axes" )
+    } else labCheck = T
+  }
+
+  alCheck = F
+  if ( !is.null( axisLabel ) ) {
+    if ( !is.list( axisLabel ) ) {
+      warning( "A list of axis labels is needed" )
+    } else if ( length( axisLabel ) != length( pos ) ) {
+      warning( "Number of axis labels does not match number of specified axes" )
+    } else alCheck = T
+  }
+
+  for ( i in 1:length( pos ) ) {
+
+    # Bottom axis
+    if ( pos[i] == 1 | pos[i] == '1' | pos[i] == 'B' |
+         pos[i] == 'b' | pos[i] == 'bottom' |
+         pos[i] == 'Bottom' ) {
+
+      # Draw axis line
+      if ( type == 1 | type == 'extend' )
+        abline( h = yl[1], lwd = lnSz )
+      if ( type == 2 | type == 'truncate' )
+        segments( xl[1], yl[1], xl[2], yl[1], lwd = lnSz )
+
+      # Add label to axis
+      if ( labCheck ) {
+        mtext( label[i], side = 1, cex = lbSz, line = lbPos[i] )
+      }
+
+      # Draw axis tick labels
+
+      # Increments
+      if ( inc[i] > 0 ) {
+        ai = seq( xl[1], xl[2], inc[i] )
+        ai = round( ai, prec )
+        axis( 1, ai, tick = F, line = axPos[i],
+              cex.axis = axSz )
+      }
+
+      # String labels
+      if ( alCheck ) {
+        if ( !is.null( axisLabel[[i]] ) ) {
+          axis( 1, axisLabel[[i]][[1]], axisLabel[[i]][[2]],
+                tick = F, line = axPos[i],
+                cex.axis = axSz )
+        }
+      }
+    }
+
+    # Left axis
+    if ( pos[i] == 2 | pos[i] == '2' | pos[i] == 'L' |
+         pos[i] == 'l' | pos[i] == 'left' |
+         pos[i] == 'Left' ) {
+
+      # Draw axis line
+      if ( type == 1 | type == 'extend' )
+        abline( v = xl[1], lwd = lnSz )
+      if ( type == 2 | type == 'truncate' )
+        segments( xl[1], yl[1], xl[1], yl[2], lwd = lnSz )
+
+      # Add axis label
+      if ( labCheck ) {
+        mtext( label[i], side = 2, cex = lbSz, line = lbPos[i] )
+      }
+
+      # Draw axis tick labels
+
+      # Increments
+      if ( inc[i] > 0 ) {
+        ai = seq( yl[1], yl[2], inc[i] )
+        ai = round( ai, prec )
+        axis( 2, ai, tick = F, line = axPos[i],
+              cex.axis = axSz )
+      }
+
+      # String labels
+      if ( alCheck ) {
+        if ( !is.null( axisLabel[[i]] ) ) {
+          axis( 2, axisLabel[[i]][[1]], axisLabel[[i]][[2]],
+                tick = F, line = axPos[i],
+                cex.axis = axSz )
+        }
+      }
+    }
+
+    # Top axis
+    if ( pos[i] == 3 | pos[i] == '3' | pos[i] == 'T' |
+         pos[i] == 't' | pos[i] == 'top' |
+         pos[i] == 'Top' ) {
+
+      # Draw axis line
+      if ( type == 1 | type == 'extend' )
+        abline( h = yl[2], lwd = lnSz )
+      if ( type == 2 | type == 'truncate' )
+        segments( xl[1], yl[2], xl[2], yl[2], lwd = lnSz )
+
+      # Add axis label
+      if ( labCheck ) {
+        mtext( label[i], side = 3, cex = lbSz, line = lbPos[i] )
+      }
+
+      # Draw axis tick labels
+
+      # Increments
+      if ( inc[i] > 0 ) {
+        ai = seq( xl[1], xl[2], inc[i] )
+        ai = round( ai, prec )
+        axis( 3, ai, tick = F, line = axPos[i],
+              cex.axis = axSz )
+      }
+
+      # String labels
+      if ( alCheck ) {
+        if ( !is.null( axisLabel[[i]] ) ) {
+          axis( 3, axisLabel[[i]][[1]], axisLabel[[i]][[2]],
+                tick = F, line = axPos[i],
+                cex.axis = axSz )
+        }
+      }
+
+
+    }
+
+    # Right axis
+    if ( pos[i] == 4 | pos[i] == '4' | pos[i] == 'R' |
+         pos[i] == 'r' | pos[i] == 'right' |
+         pos[i] == 'Right' ) {
+
+      # Draw axis line
+      if ( type == 1 | type == 'extend' )
+        abline( v = xl[2], lwd = lnSz )
+      if ( type == 2 | type == 'truncate' )
+        segments( xl[2], yl[1], xl[2], yl[2], lwd = lnSz )
+
+      # Add axis label
+      if ( labCheck ) {
+        mtext( label[i], side = 4, cex = lbSz, line = lbPos[i] )
+      }
+
+      # Draw axis tick labels
+
+      # Increments
+      if ( inc[i] > 0 ) {
+        ai = seq( yl[1], yl[2], inc[i] )
+        ai = round( ai, prec )
+        axis( 4, ai, tick = F, line = axPos[i],
+              cex.axis = axSz )
+      }
+
+      # String labels
+      if ( alCheck ) {
+        if ( !is.null( axisLabel[[i]] ) ) {
+          axis( 1, axisLabel[[i]][[1]], axisLabel[[i]][[2]],
+                tick = F, line = axPos[i],
+                cex.axis = axSz )
+        }
+      }
+
+    }
+
+  }
+
 }
