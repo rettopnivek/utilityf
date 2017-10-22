@@ -19,4 +19,3 @@ This function applies the logistic function to a set of values
 logistic( c(0,-2.197225,2.1972255,-Inf,Inf) )
 
 }
-

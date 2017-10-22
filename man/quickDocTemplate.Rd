@@ -18,4 +18,3 @@ to the console.
 quickDocTemplate()
 
 }
-

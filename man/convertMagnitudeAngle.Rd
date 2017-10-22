@@ -27,4 +27,3 @@ cart = convertMagnitudeAngle( 2, 45 )
 print( cart )
 
 }
-

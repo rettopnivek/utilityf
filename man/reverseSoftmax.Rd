@@ -33,4 +33,3 @@ round(sm,3)
 round(output$par,3)
 
 }
-

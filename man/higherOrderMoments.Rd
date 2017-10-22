@@ -29,9 +29,9 @@ variance, skew, and kurtosis) for a vector of data.
 
 Terriberry, T. B. (2007). Computing Higher-Order Moments Online.
 }
+
 \examples{
 x = rnorm( 100 )
 higherOrderMoments( x )
 
 }
-

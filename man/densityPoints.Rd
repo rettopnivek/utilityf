@@ -30,4 +30,3 @@ dp = densityPoints( x )
 points( dp$x, dp$y, pch = 19 )
 
 }
-

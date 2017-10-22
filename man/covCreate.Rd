@@ -24,4 +24,3 @@ mat = cbind( rep( c(0,1), 3 ), rep( c(0,1,0), each = 2 ) )
 ex = covCreate( mat ); print( ex )
 
 }
-

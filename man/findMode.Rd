@@ -32,4 +32,3 @@ x = c( 'cat','dog','cat','mouse')
 findMode(x,discrete=T)
 
 }
-

@@ -21,4 +21,3 @@ x = seq(-3,3,length=100)
 lines(x,erf(x))
 
 }
-

@@ -55,4 +55,3 @@ violinPlot( x, .5, interval = list( crit = crit ), col = 'grey',
 violinPlot( x, .5, lwd = 2 )
 
 }
-

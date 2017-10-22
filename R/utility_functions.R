@@ -32,6 +32,7 @@
 # Lookup - 23:  Calculate the First Four Moments
 # Lookup - 24:  Generate Multi-line comments
 # Lookup - 25:  Generate Custom Plot Axes
+# Lookup - 26:  Relative Weights for Information Criterion Values
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -355,128 +356,242 @@ convertMagnitudeAngle = function( H, A, degrees = T) {
 }
 
 # Lookup - 12
-#' Create Design Matrix
+#' Coding Schemes for Nominal Variables
 #'
-#' A function that translates a vector of categories into different
-#' types of design matrices.
+#' Creates a numeric coding scheme for a nominal variable
+#' with two or more categories.
 #'
-#' @param X a vector of categories
-#' @param Levels the unique values of X. If left unspecified, the
-#'   function attemps to extract, but the mappings will be based on
-#'   order of appearance.
-#' @param Mapping For \code{Dummy} and \code{Effects} options,
-#'   provides an additional way to indicates which unique values of
-#'   X should be mapped to which columns of the design matrix.
-#'   For the \code{Coef} option, provides the corresponding weight
-#'   values for the unique values of X.
-#' @param type Current options include...
-#'   \itemize{
-#'     \item \code{Dummy} -> Given K levels and N trials, returns a
-#'     N x (K-1) design matrix using dummy coding (i.e. 0 and 1,
-#'     with one variable). Useful for simple effects.
-#'     \item \code{Effects} -> Given K levels and N trials, returns a
-#'     N x (K-1) design matrix using effects coding (i.e. -1 and 1,
-#'     with one variable denoted solely by -1). Useful for comparisons
-#'     against the grand mean.
-#'     \item \code{Intercept} -> Given K levels and N trials, returns a N x K
-#'     design matrix in which each unique level has its own column
-#'     (i.e. K unique intercepts).
-#'     \item \code{Coef} -> Given K levels and N trials, returns a N x 1
-#'     design matrix in which a set of weights (specified via the
-#'     \code{Mapping} variable) are matched to the unique levels of X.
-#'   }
+#' @param x a vector of levels.
+#' @param type the type of coding to use, either 'Dummy',
+#' 'Effects', or 'Intercept'.
+#' @param levels an optional value used to specify the
+#'   reference group with dummy, simple, and effects
+#'   coding schemes, or more generally, a vector with
+#'   the unique levels used to map a desired order when
+#'   creating the design matrix.
+#' @param label an optional character string giving the
+#'   label for the nominal variable.
+#' @param weights an optional vector of weights to be
+#'   assigned to each level of the nominal variable
+#'   when applying the coefficient coding scheme.
 #'
-#' @return A design matrix.
+#' @details
+#'
+#' With dummy coding, each additional category in a nominal
+#' variable is compared against a reference category. For
+#' K categories, K - 1 dummy variables are created, coded as 1
+#' for the presence of a category and 0 otherwise. The intercept
+#' term is interpreted as the cell mean for the reference category.
+#'
+#' With simple coding, each additional category in a nominal
+#' variable is compared against a reference category. For
+#' K categories, K - 1 dummy variables are created, coded as
+#' (K-1)/K for the presence of a category, -1/K otherwise.
+#' The intercept term is interpreted as the grand mean
+#' (the mean of the cell means).
+#'
+#' With effects coding (also known as deviation coding),
+#' each additional category in a nominal variable is
+#' compared against the grand mean. For K categories, K - 1
+#' dummy variables are created, coded as 1 for the presence
+#' of a category, -1 for the presence of the reference
+#' category, and 0 otherwise. The intercept term is
+#' interpreted as the grand mean.
+#'
+#' With intercept coding, a separate dummy variable is specified
+#' for each category in the nominal variable, coded as 1 when
+#' the category is present and 0 otherwise. This coding scheme
+#' requires that the model have no intercept term. Instead,
+#' predictions for the dependent variable for each category are
+#' estimated separately. Therefore, for K categories, K dummy
+#' variables are created.
+#'
+#' With coefficient coding, a single dummy variable is specified,
+#' and a desired weight is assigned for each level of the nominal
+#' variable. This is useful for testing hypothesized ordered
+#' relationships.
+#'
+#' @return Given K levels for the inputted variable, returns a matrix
+#' with K - 1 columns (dummy, simple, and effects coding schemes),
+#' K columns (intercept coding schemes), or 1 column (coefficient
+#' coding schemes) with the new numerical coding scheme.
 #'
 #' @examples
-#' # Default is dummy coding
-#' designCoding( 1:5 )
-#' # Intercept, using mapping option
-#' designCoding( 1:5, Levels = c(3,1,2,4,5), type = 'Intercept' )
-#' # Example of effects coding with the levels reversed
-#' # Note that here, mapping ranges from 0 - 4, not 1 - 5
-#' designCoding( 1:5, Mapping = 4:0, type = 'Effects' )
-#' # Coefficients
-#' set.seed(500)
-#' designCoding( 1:5, Mapping = rnorm(5), type = 'Coef' )
+#' x = rep( c('low','med','high'), each = 2 ) # 3 levels
+#' data.frame( x, nominalCoding( x, type = 'Dummy' ) )
+#' data.frame( x, nominalCoding( x, type = 'Simple' ) )
+#' data.frame( x, nominalCoding( x, type = 'Effects' ) )
+#' data.frame( x, nominalCoding( x, type = 'Intercept' ) )
+#' data.frame( x, nominalCoding( x, type = 'Coefficient', weights = rnorm(3) ) )
 #'
 #' @export
+nominalCoding = function( x, type = 'Effects',
+                          levels = NULL, label = NULL,
+                          weights = NULL ) {
 
-designCoding = function( X, Levels = NULL, Mapping=NULL,
-                         type = 'Dummy' ) {
+  # Extract variable name
+  if ( is.null( label ) ) {
+    nm = deparse( substitute(x) )
+  } else {
+    nm = label
+  }
 
-  # If necessary, extract the unique values of the variable
-  if (length(Levels)==0) Levels = unique(X)
+  # Extract dimensions
+  n = length( x ) # Number of values
+  k = length( unique( x ) ) # Number of levels
 
-  # Determine the total number of levels in the variable
-  K = length(Levels)
+  # Extract unique levels
+  if ( is.null( levels ) ) {
+    levels = unique( x )
+  } else {
 
-  # Dummy coding
-  if (type=='Dummy') {
+    # Check that values in variable match inputted levels
+    if ( !all( levels %in% x ) ) {
+      stop( 'Levels must match values in variable',
+            call. = FALSE )
+    }
 
-    # Create a design matrix
-    out = matrix( 0, nrow = length(X), ncol = K-1 )
+    # If a single level is provided as a reference
+    if ( length( levels ) == 1 ) {
 
-    # Create default mapping if necessary
-    if (length(Mapping)==0) Mapping = 0:(K-1)
+      # Reorder extracted levels so that reference
+      # group is first
+      tmp = unique( x )
+      tmp = tmp[ tmp != levels ]
+      levels = c( levels, tmp )
 
-    for (k in 1:K) {
+    } else {
 
-      if ( Mapping[k]!=0 ) out[X==Levels[k], Mapping[k]] = 1;
+      # If fewer categories than actual number of levels
+      # are provided
+      if ( length( levels ) < k ) {
+
+        tmp = unique( x )
+        tmp = tmp[ !(tmp %in% levels) ]
+        levels = c( levels, tmp )
+
+      }
 
     }
 
   }
 
-  # Effects coding
-  if (type=='Effects') {
+  type_check = F # Check if a correct coding scheme was provided
+  if ( k > 1 ) {
 
-    # Create a design matrix
-    out = matrix( 0, nrow = length(X), ncol = K-1 )
+    # Dummy coding
+    if ( type == 'Dummy' | type == 'dummy' |
+         type == 'D' | type == 'd' ) {
 
-    # Create default mapping if necessary
-    if (length(Mapping)==0) Mapping = 0:(K-1)
+      # Initialize matrix
+      m = matrix( 0, n, k - 1 )
 
-    for (k in 1:K) {
+      # Fill in values
+      for ( l in 2:k ) {
+        m[ x == levels[l], l - 1 ] = 1;
+      }
 
-      if ( Mapping[k]==0 ) out[X==Levels[k]] = -1;
-      if ( Mapping[k]!=0 ) out[X==Levels[k], Mapping[k]] = 1;
+      # Label columns
+      colnames( m ) = paste( nm, as.character( levels[-1] ), sep = '_' )
 
+      type_check = T
     }
 
-  }
+    # Simple coding
+    if ( type == 'Simple' | type == 'simple' |
+         type == 'S' | type == 's' ) {
 
-  # Intercept coding
-  if (type=='Intercept') {
+      # Initialize matrix
+      m = matrix( -1/k, n, k - 1 )
 
-    # Create a design matrix
-    out = matrix( 0, nrow = length(X), ncol = K )
+      # Fill in values
+      for ( l in 2:k ) {
+        m[ x == levels[l], l - 1 ] = (k-1)/k;
+      }
 
-    # Create default mapping if necessary
-    if (length(Mapping)==0) Mapping = 1:K
+      # Label columns
+      colnames( m ) = paste( nm, as.character( levels[-1] ), sep = '_' )
 
-    for (k in 1:K) {
-
-      out[X==Levels[k], Mapping[k]] = 1;
-
+      type_check = T
     }
 
-  }
+    # Effects coding
+    if ( type == 'Effects' | type == 'effects' |
+         type == 'Effect' | type == 'effect' |
+         type == 'E' | type == 'e' ) {
 
-  # Univariate Coefficient mapping
-  if (type=='Coef') {
+      # Initialize matrix
+      m = matrix( 0, n, k - 1 )
 
-    if ( length(Mapping)==0) stop('Must provide weighting values')
+      # Fill in values
+      for ( l in 2:k ) {
+        m[ x == levels[l], l - 1 ] = 1;
+      }
+      m[ x == levels[1], ] = -1
 
-    out = matrix( 0, nrow = length(X), ncol = 1 )
+      # Label columns
+      colnames( m ) =  paste( nm, as.character( levels[-1] ), sep = '_' )
 
-    for (k in 1:K) {
-      out[X==Levels[k],1] = Mapping[k]
+      type_check = T
     }
 
+    # Intercept
+    if ( type == 'Intercept' | type == 'intercept' |
+         type == 'I' | type == 'i' ) {
+
+      # Initialize matrix
+      m = matrix( 0, n, k )
+
+      # Fill in values
+      for ( l in 1:k ) {
+        m[ x == levels[l], l ] = 1;
+      }
+
+      # Label columns
+      colnames( m ) =  paste( nm, as.character( levels ), sep = '_' )
+
+      type_check = T
+    }
+
+    # Coef
+    if ( type == 'Coefficient' |
+         type == 'coefficient' |
+         type == 'Coef' | type == 'coef' |
+         type == 'C' | type == 'c' ) {
+
+      # Check for custom values
+      if ( is.null( weights ) ) {
+        stop( 'Weights must be provided',
+              call. = FALSE )
+      }
+
+      # Initialize matrix
+      m = matrix( 0, n, 1 )
+
+      # Fill in values
+      for ( l in 1:k ) {
+        m[ x == levels[l], 1 ] = weights[l];
+      }
+
+      # Label column
+      colnames( m ) =  nm
+
+      type_check = T
+    }
+
+  } else {
+    # Intercept term
+    m = matrix( 1, n, 1 );
+    warning( 'Variable has only one level',
+             call. = FALSE )
+    type_check = T
   }
 
-  return( out )
+  if ( !type_check )
+    stop( "Need type to be either 'Dummy', 'Simple', 'Effects', 'Intercept', or 'Coef'.",
+          call. = FALSE )
+
+  return( m );
 }
 
 # Lookup - 13
@@ -559,44 +674,92 @@ createIncrement = function(x) {
 # Lookup - 15
 #' Calculate Select Information Criterion Values
 #'
-#' A function that calculates either Akaike's Information Criterion (AIC)
-#' with a correction or the Bayesian Information Criterion (BIC).
+#' A function that calculates either Akaike's Information Criterion
+#' (AIC; with or without a correction for small sample sizes) or the
+#' Bayesian Information Criterion (BIC).
 #'
 #' @param logLik a log-likelihood value.
 #' @param k the number of free parameters for the model.
 #' @param n the number of observations in the sample.
-#' @param type indicates whether the 'AICc' or 'BIC' value should be returned.
+#' @param type indicates whether to compute the 'AIC', 'AICc', or 'BIC'.
 #'
-#' @details Given a summed log-likelihood \eqn{L} from a model and \eqn{K} free
-#'   parameters, the AIC is \deqn{ 2K - 2L. } A correction for finite samples is
-#'   recommended (e.g. Burnham & Anderson, 2002), and for \eqn{N} observations
-#'   the new equation is \deqn{ 2K - 2L + \frac{2K(K+1)}{N+K+1}. } The formula
-#'   for the BIC is \deqn{ log(N)K - 2L. } For both criterions, models with
-#'   smaller values are to be preferred.
+#' @details
+#'
+#' Given a summed log-likelihood \eqn{L} from a model and \eqn{K} free
+#' parameters, the AIC is \deqn{ 2K - 2L. }
+#'
+#' The AIC estimates the information loss from approximating the
+#' true (generating) probability distribution with another probability
+#' distribution. This discrepancy is represented by the Kullback-Leibler
+#' information quantity, the negative of the generalized entropy.
+#' Picking a model with the lowest information loss is asymptotically
+#' equivalent to picking the model with the lowest AIC. Therefore,
+#' the AIC is valid only for sufficiently large data sets.
+#'
+#' A correction for finite samples is recommended (e.g., Burnham &
+#' Anderson, 2002), and for \eqn{N} observations the new equation is
+#' \deqn{ 2K - 2L + \frac{2K(K+1)}{N+K+1}. } The corrected AIC is
+#' denoted as 'AICc'.
+#'
+#' When comparing a set of candidate models, the AIC indicates which
+#' model is most likely to best fit a new set of data generated from
+#' the same process that produced the original sample. It is not
+#' necessary to assume that the true generating model is part of the
+#' set of candidate models. The AIC is subject to sampling variability;
+#' a new sample of data will result in a different AIC value.
+#'
+#' The AIC has been criticized for being too liberal and likely to
+#' select overly complex models. The AIC also neglects the sampling
+#' variability of the parameter values. This means that if the
+#' likelihood values for the parameters are not concentrated around
+#' the maximum likelihood, using the AIC can lead to overly
+#' optimistic assessments. The AIC is not consistent; as the number
+#' of observations grows large, the probability of selecting a
+#' true low-dimensional model based on model selection using the
+#' AIC does not approach 1.
+#'
+#' The formula for the BIC is \deqn{ log(N)K - 2L. }
+#'
+#' The BIC is an asymptotic approximation to a Bayesian model
+#' selection analysis. In Bayesian model selection, one must
+#' compute the probability of each model given the data, which
+#' requires specifying prior probabilities and integrating over
+#' the parameter space. The BIC, though only an approximation,
+#' is much easier to calculate and requires no specification of
+#' priors. The BIC is consistent as the number of observations
+#' grow large; the probability of selecting the true low-dimensional
+#' model when using the BIC for model selection approaches 1.
+#' The BIC also takes in account parameter uncertainty. However,
+#' when using the BIC for model selection, one must assume that the
+#' true generating model is in the set of candidate models
+#' (which does not necessarily hold in reality).
 #'
 #' @references
-#' Akaike, H. (1973). Information theory and an extension of the maximum likelihood
-#'   principle. In B. N. Petrov & F. Caski (Eds.), Proceedings of the Second
-#'   International Symposium on Information Theory (pp. 267-281). Budapest:Akademiai
-#'   Kiado.
+#' Akaike, H. (1973). Information theory and an extension of the maximum
+#'   likelihood principle. In B. N. Petrov & F. Caski (Eds.), Proceedings
+#'   of the Second International Symposium on Information Theory (pp.
+#'   267-281). Budapest:Akademiai Kiado.
 #'
-#' Burnham, K. P., & Anderson, D. R. (2002). Model selection and multimodel inference:
-#'   A practical information-theoretic approach. New York: Springer-Verlag.
+#' Burnham, K. P., & Anderson, D. R. (2002). Model selection and multimodel
+#'   inference: A practical information-theoretic approach.
+#'   New York:Springer-Verlag.
 #'
-#' Schwarz, G. (1978). Estimating the dimension of a model. Annals of Statistics, 6,
-#'   461-464.
+#' Schwarz, G. (1978). Estimating the dimension of a model. Annals of
+#'   Statistics, 6, 461-464.
 #'
-#' @return A value for either the AICc or the BIC.
+#' @return A value for either the AIC, AICc, or the BIC.
 #'
 #' @examples
 #' N = 100; K = 2
 #' x = rnorm( 100, 1, 2 )
 #' m1 = sum( dnorm( x, 0, 1, log = T ) )
 #' m2 = sum( dnorm( x, 1, 2, log = T ) )
-#' # AIC values comparing the two models
+#' # Corrected AIC values comparing the two models
 #' print( round( infoCrit( c(m1,m2), K, N ), 2 ) )
+#' # AIC values comparing the two models
+#' print( round( infoCrit( c(m1,m2), K, N, type = 'AIC' ), 2 ) )
 #' # BIC values comparing the two models
-#' print( round( infoCrit( c(m1,m2), K, N ), 2 ), type = 'BIC' )
+#' print( round( infoCrit( c(m1,m2), K, N, type = 'BIC' ), 2 ) )
 #'
 #' @export
 
@@ -605,6 +768,7 @@ infoCrit = function( logLik, k, n, type = 'AICc' ) {
   # Initialize output
   out = NA
 
+  if ( type == 'AIC' ) out = AICc_val( logLik, k, n )
   if ( type == 'AICc' ) out = AICc_val( logLik, k, n )
   if ( type == 'BIC' ) out = BIC_val( logLik, k, n )
 
@@ -890,36 +1054,6 @@ quickDocTemplate = function() {
 }
 
 # Lookup - 22
-
-# Include function from Dirk Eddelbuettel
-# See http://stackoverflow.com/questions/1358003/tricks-to-manage-the-available-memory-in-an-r-session
-.ls.objects = function ( pos = 1, pattern, order.by,
-                         decreasing=FALSE, head=FALSE, n = 5 ) {
-
-  napply = function( names, fn)
-    sapply( names, function(x) fn( get( x, pos = pos) ) )
-
-  names = ls( pos = pos, pattern = pattern )
-  obj.class = napply( names, function(x) as.character(class(x))[1] )
-  obj.mode = napply( names, mode )
-  obj.type = ifelse( is.na(obj.class), obj.mode, obj.class )
-  obj.prettysize = napply( names, function(x) {
-    format(utils::object.size(x), units = "auto")
-    }
-  )
-  obj.size = napply( names, object.size )
-  obj.dim = t( napply( names, function(x) as.numeric(dim(x))[1:2]) )
-  vec = is.na(obj.dim)[, 1] & (obj.type != "function")
-  obj.dim[vec, 1] = napply(names, length)[vec]
-  out = data.frame( obj.type, obj.size, obj.prettysize, obj.dim )
-  names(out) = c("Type", "Size", "PrettySize", "Rows", "Columns")
-  if (!missing(order.by))
-    out = out[order(out[[order.by]], decreasing=decreasing), ]
-  if (head)
-    out = head(out, n)
-  out
-}
-
 #' Improved List of Objects
 #'
 #' A function created by Dirk Eddelbuettel that lists the objects
@@ -1270,4 +1404,68 @@ customAxes = function( xl, yl,
 
   }
 
+}
+
+# Lookup - 26
+#' Relative Weights for Information Criterion Values
+#'
+#' Computes the relative probability of being the
+#' 'best' model for a set of candidate models based
+#' on their AIC or BIC values.
+#'
+#' @param ic a vector of information criterion values,
+#'   either a set of AIC or BIC values.
+#'
+#' @details
+#'
+#' A set of information criterion values (i.e., AIC or BIC)
+#' can be transformed into a set of relative probabilities,
+#' the probability that a given model is the 'best'. In the
+#' case of the AIC, probabilities represent how likeliy
+#' a given model will minimize information loss based on the
+#' data and set of candidate models. In the case of the BIC,
+#' probabilities represent how likely a given model is the
+#' true (generating) model out of the set of candidate models
+#' (assuming the true model is in the set).
+#'
+#' @return A vector of probabilities.
+#'
+#' @examples
+#' # Model comparison with polynomial regression
+#' x = rnorm(100) # Simulate predictor
+#' df = data.frame( x1 = x, x2 = x^2, x3 = x^3, x4 = x^4 )
+#' # True model is quadratic
+#' df$y = .5 * df$x1 - .7 * df$x2 + rnorm(100,0,.75)
+#' # Fit 4 models
+#' m1 = lm( y ~ x1, data = df )
+#' m2 = lm( y ~ x1 + x2, data = df ) # True
+#' m3 = lm( y ~ x1 + x2 + x3, data = df )
+#' m4 = lm( y ~ x1 + x2 + x3 + x4, data = df )
+#' # Compute AIC
+#' aic = c( AIC( m1 ), AIC( m2 ), AIC( m3 ), AIC( m4 ) )
+#' names( aic ) = c( 'M1', 'M2', 'M3', 'M4' )
+#' # AIC weights
+#' print( round( icWeights( aic ), 2 ) )
+#' # Compute BIC
+#' bic = c( BIC( m1 ), BIC( m2 ), BIC( m3 ), BIC( m4 ) )
+#' names( bic ) = c( 'M1', 'M2', 'M3', 'M4' )
+#' # BIC weights
+#' print( round( icWeights( bic ), 2 ) )
+#'
+#' # xa = seq( min(x), max(x), length = 100 )
+#' # nd = data.frame( x1 = xa, x2 = xa^2, x3 = xa^3, x4 = xa^4, y = NA )
+#' # plot( df$x1, df$y, pch = 19, xlab = 'x', ylab = 'y' )
+#' # lines( xa, predict( m1, newdata = nd ), col = 'blue' )
+#' # lines( xa, predict( m2, newdata = nd ), col = 'red' )
+#' # lines( xa, predict( m3, newdata = nd ), col = 'green' )
+#' # lines( xa, predict( m4, newdata = nd ), col = 'orange' )
+#'
+#' @export
+icWeights = function( ic ) {
+
+  delta_ic = ic - min( ic )
+  relative_likelihood = exp( -.5 * delta_ic )
+  weights = relative_likelihood / sum( relative_likelihood )
+
+  return( weights )
 }

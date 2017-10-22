@@ -21,4 +21,3 @@ This function calculates the standard error of the mean.
 sem( rnorm(1000) )
 
 }
-

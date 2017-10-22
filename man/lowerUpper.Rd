@@ -29,4 +29,3 @@ plot( x.limit, y.limit, type='n', xlab='Values', ylab='Density' )
 lines(d$x,d$y)
 
 }
-

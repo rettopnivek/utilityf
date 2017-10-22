@@ -72,4 +72,3 @@ customAxes( xl, yl, pos = c(1,4), label = c( 'Conditions', 'Values' ),
   inc = c(0,.5), axSz = .75 )
 
 }
-

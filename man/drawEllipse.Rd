@@ -49,4 +49,3 @@ ex = drawEllipse( .5, .2, Xc = -.5, Yc = .5, k = 20, ret = T, col = 'green')
 drawEllipse( .05, .3, Xc = .5, Yc = -.5, k = 290, col = 'red')
 
 }
-

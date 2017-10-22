@@ -26,4 +26,3 @@ x = c( 2320, 1038, 3010, 7503 )
 print( createIncrement(x) )
 
 }
-

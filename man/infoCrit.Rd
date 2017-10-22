@@ -13,44 +13,89 @@ infoCrit(logLik, k, n, type = "AICc")
 
 \item{n}{the number of observations in the sample.}
 
-\item{type}{indicates whether the 'AICc' or 'BIC' value should be returned.}
+\item{type}{indicates whether to compute the 'AIC', 'AICc', or 'BIC'.}
 }
 \value{
-A value for either the AICc or the BIC.
+A value for either the AIC, AICc, or the BIC.
 }
 \description{
-A function that calculates either Akaike's Information Criterion (AIC)
-with a correction or the Bayesian Information Criterion (BIC).
+A function that calculates either Akaike's Information Criterion
+(AIC; with or without a correction for small sample sizes) or the
+Bayesian Information Criterion (BIC).
 }
 \details{
 Given a summed log-likelihood \eqn{L} from a model and \eqn{K} free
-  parameters, the AIC is \deqn{ 2K - 2L. } A correction for finite samples is
-  recommended (e.g. Burnham & Anderson, 2002), and for \eqn{N} observations
-  the new equation is \deqn{ 2K - 2L + \frac{2K(K+1)}{N+K+1}. } The formula
-  for the BIC is \deqn{ log(N)K - 2L. } For both criterions, models with
-  smaller values are to be preferred.
+parameters, the AIC is \deqn{ 2K - 2L. }
+
+The AIC estimates the information loss from approximating the
+true (generating) probability distribution with another probability
+distribution. This discrepancy is represented by the Kullback-Leibler
+information quantity, the negative of the generalized entropy.
+Picking a model with the lowest information loss is asymptotically
+equivalent to picking the model with the lowest AIC. Therefore,
+the AIC is valid only for sufficiently large data sets.
+
+A correction for finite samples is recommended (e.g., Burnham &
+Anderson, 2002), and for \eqn{N} observations the new equation is
+\deqn{ 2K - 2L + \frac{2K(K+1)}{N+K+1}. } The corrected AIC is
+denoted as 'AICc'.
+
+When comparing a set of candidate models, the AIC indicates which
+model is most likely to best fit a new set of data generated from
+the same process that produced the original sample. It is not
+necessary to assume that the true generating model is part of the
+set of candidate models. The AIC is subject to sampling variability;
+a new sample of data will result in a different AIC value.
+
+The AIC has been criticized for being too liberal and likely to
+select overly complex models. The AIC also neglects the sampling
+variability of the parameter values. This means that if the
+likelihood values for the parameters are not concentrated around
+the maximum likelihood, using the AIC can lead to overly
+optimistic assessments. The AIC is not consistent; as the number
+of observations grows large, the probability of selecting a
+true low-dimensional model based on model selection using the
+AIC does not approach 1.
+
+The formula for the BIC is \deqn{ log(N)K - 2L. }
+
+The BIC is an asymptotic approximation to a Bayesian model
+selection analysis. In Bayesian model selection, one must
+compute the probability of each model given the data, which
+requires specifying prior probabilities and integrating over
+the parameter space. The BIC, though only an approximation,
+is much easier to calculate and requires no specification of
+priors. The BIC is consistent as the number of observations
+grow large; the probability of selecting the true low-dimensional
+model when using the BIC for model selection approaches 1.
+The BIC also takes in account parameter uncertainty. However,
+when using the BIC for model selection, one must assume that the
+true generating model is in the set of candidate models
+(which does not necessarily hold in reality).
 }
 \examples{
 N = 100; K = 2
 x = rnorm( 100, 1, 2 )
 m1 = sum( dnorm( x, 0, 1, log = T ) )
 m2 = sum( dnorm( x, 1, 2, log = T ) )
-# AIC values comparing the two models
+# Corrected AIC values comparing the two models
 print( round( infoCrit( c(m1,m2), K, N ), 2 ) )
+# AIC values comparing the two models
+print( round( infoCrit( c(m1,m2), K, N, type = 'AIC' ), 2 ) )
 # BIC values comparing the two models
-print( round( infoCrit( c(m1,m2), K, N ), 2 ), type = 'BIC' )
+print( round( infoCrit( c(m1,m2), K, N, type = 'BIC' ), 2 ) )
 
 }
 \references{
-Akaike, H. (1973). Information theory and an extension of the maximum likelihood
-  principle. In B. N. Petrov & F. Caski (Eds.), Proceedings of the Second
-  International Symposium on Information Theory (pp. 267-281). Budapest:Akademiai
-  Kiado.
+Akaike, H. (1973). Information theory and an extension of the maximum
+  likelihood principle. In B. N. Petrov & F. Caski (Eds.), Proceedings
+  of the Second International Symposium on Information Theory (pp.
+  267-281). Budapest:Akademiai Kiado.
 
-Burnham, K. P., & Anderson, D. R. (2002). Model selection and multimodel inference:
-  A practical information-theoretic approach. New York: Springer-Verlag.
+Burnham, K. P., & Anderson, D. R. (2002). Model selection and multimodel
+  inference: A practical information-theoretic approach.
+  New York:Springer-Verlag.
 
-Schwarz, G. (1978). Estimating the dimension of a model. Annals of Statistics, 6,
-  461-464.
+Schwarz, G. (1978). Estimating the dimension of a model. Annals of
+  Statistics, 6, 461-464.
 }
-

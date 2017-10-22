@@ -18,9 +18,9 @@ currently in the workspace along with pertinent information.
 
 Eddelbuettel, D. (2009). Retrieved from http://stackoverflow.com/questions/1358003/tricks-to-manage-the-available-memory-in-an-r-session
 }
+
 \examples{
 x = rnorm( 100 )
 lsos()
 
 }
-

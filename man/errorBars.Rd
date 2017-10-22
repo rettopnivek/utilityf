@@ -35,4 +35,3 @@ text( pos, limits[2,], c("95\%","68\%"), pos = 3 )
 abline(h=0)
 
 }
-

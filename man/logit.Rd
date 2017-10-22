@@ -20,4 +20,3 @@ probabilities.
 logit( c(.5,.1,.9,0,1) )
 
 }
-

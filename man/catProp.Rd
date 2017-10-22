@@ -30,4 +30,3 @@ x[ u < .33 ] = 'cat'
 catProp( x, c("cat","dog","bird" ) )
 
 }
-

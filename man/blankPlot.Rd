@@ -19,4 +19,3 @@ A empty plot.
 \description{
 This function generates a completely blank plot.
 }
-

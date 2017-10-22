@@ -32,4 +32,3 @@ ex = softmax( mat )
 rowSums( ex ) # Each row should sum to 1
 
 }
-
