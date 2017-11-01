@@ -2,10 +2,6 @@
 # Assorted utility functions #
 #----------------------------#
 
-# Package development
-# library(devtools)
-# library(roxygen2)
-
 # Index
 # Lookup - 01:  Standard Error of the Mean
 # Lookup - 02:  Logit Function
