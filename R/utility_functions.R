@@ -29,6 +29,8 @@
 # Lookup - 24:  Generate Multi-line comments
 # Lookup - 25:  Generate Custom Plot Axes
 # Lookup - 26:  Relative Weights for Information Criterion Values
+# Lookup - 27:  Simple Bootstrap Function
+# Lookup - 28:  Template for Project Headers
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -1041,12 +1043,16 @@ catProp = function( x, val ) {
 #' @export
 
 quickDocTemplate = function() {
-  cat( "  # Purpose:", "\n" )
-  cat( "  # ...", "\n" )
-  cat( "  # Arguments:", "\n" )
-  cat( "  # ...", "\n" )
-  cat( "  # Returns:", "\n" )
-  cat( "  # ...", "\n" )
+
+  string = paste(
+    "  # Purpose:", "\n",
+    "  # ...", "\n",
+    "  # Arguments:", "\n",
+    "  # ...", "\n",
+    "  # Returns:", "\n",
+    "  # ...", "\n", sep = '' )
+  message( string )
+
 }
 
 # Lookup - 22
@@ -1464,4 +1470,109 @@ icWeights = function( ic ) {
   weights = relative_likelihood / sum( relative_likelihood )
 
   return( weights )
+}
+
+# Lookup - 27
+#' Simple Bootstrap Function
+#'
+#' A function for computing a test statistic over
+#' multiple replicates of a set of data. Replicates
+#' are created by sampling from the original data with
+#' replacement.
+#'
+#' @param x a numeric vector, or a long-form matrix or data frame.
+#' @param T_x a function to compute a desired test statistic
+#'   (default is the mean).
+#' @param nRep the number or replicates to sample.
+#' @param ... additional parameters for the test statistic function.
+#'
+#' @return Returns a list containing the test statistics for each
+#'   replicate, along with the test statistic for the original
+#'   set of data.
+#'
+#' @examples
+#' # Vector
+#' x = rnorm( 100 )
+#' bootstrap = simpleBootstrap( x, T_x = median )
+#' quantile( bootstrap$replicates, c( .16, .84 ) )
+#'
+#' # Matrix
+#' x = cbind( rlnorm( 100, -2, .5 ), rbeta( 100, 4, 1 ) )
+#' bootstrap = simpleBootstrap( x, T_x = colMeans )
+#' apply( bootstrap$replicates, 1, quantile, prob = c( .16, .84 ) )
+#'
+#' @export
+
+simpleBootstrap = function( x, T_x = mean, nRep = 1000, ... ) {
+
+  if ( is.vector(x) ) {
+    # If x is a vector
+
+    f = function( nr, dat, ... ) {
+
+      # Permute data
+      ord = 1:length(dat)
+      y = x[ sample( ord, size = max(ord), replace = T ) ]
+
+      # Compute test statistic
+      out = T_x( y, ... )
+
+      return( out )
+    }
+
+  } else if ( is.matrix(x) | is.data.frame(x) ) {
+    # If x is a matrix or data frame
+
+    f = function( nr, dat, ... ) {
+
+      # Permute data
+      ord = 1:dim(dat)[1]
+      y = x[ sample( ord, size = max(ord), replace = T ), ]
+
+      # Compute test statistic
+      out = T_x( y, ... )
+
+      return( out )
+    }
+
+  } else {
+    # Return an error message
+
+    string = 'Input should be a vector, or a long-form matrix or data frame.'
+    stop( string, call. = FALSE )
+  }
+
+  #
+  out = sapply( 1:nRep, f, dat = x, ... )
+
+  # Return output
+  return( list( replicates = out, observed = T_x( x, ... ) ) )
+}
+
+# Lookup - 28
+#' Template for Project Headers
+#'
+#' Prints a template for creating a project header with the
+#' author's name, email contact, and the date.
+#'
+#' @return Prints the template to the console window, where it
+#'   can be copied and modified by the user.
+#'
+#' @examples
+#' headerTemplate()
+#'
+#' @export
+
+headerTemplate = function() {
+
+  string = paste(
+    '# Title', '\n',
+    '# Written by Kevin Potter', '\n',
+    '# email: kevin.w.potter@gmail.com', '\n',
+    '# Please email me directory if you ', '\n',
+    '# have any questions or comments', '\n',
+    '# Last updated ', Sys.Date(),
+    sep = '' )
+  message( string )
+
 }
