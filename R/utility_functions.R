@@ -31,6 +31,10 @@
 # Lookup - 26:  Relative Weights for Information Criterion Values
 # Lookup - 27:  Simple Bootstrap Function
 # Lookup - 28:  Template for Project Headers
+# Lookup - 29:  Add Horizontal Lines to a Plot
+# Lookup - 30:  Add Vertical Lines to a Plot
+# Lookup - 31:  Fit a Basic Piecewise Regresssion
+# Lookup - 32:  addColorMap
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -1576,3 +1580,487 @@ headerTemplate = function() {
   message( string )
 
 }
+
+# Lookup - 29
+#' Add Horizontal Lines to a Plot
+#'
+#' Draws a set of horizontal lines all of the same
+#' width onto an existing plot.
+#'
+#' @param yval a vector of y-axis values at which to
+#'   draw the lines.
+#' @param xl the left and right boundaries for the width of
+#'   the lines.
+#' @param ... additional parameters for the
+#'   \code{\link[graphics]{segments}} function.
+#'
+#' @examples
+#' plot( rnorm(100), rnorm(100), xlim = c(-3,3) )
+#' horizLines( -2:2, c(-4,4) )
+#'
+#' @export
+
+horizLines = function( yval, xl, ... ) {
+
+  l = length( yval )
+
+  segments( rep( xl[1], l ), yval,
+            rep( xl[2], l ), yval, ... )
+
+}
+
+# Lookup - 30
+#' Add Vertical Lines to a Plot
+#'
+#' Draws a set of vertical lines all of the same
+#' height onto an existing plot.
+#'
+#' @param xval a vector of x-axis values at which to
+#'   draw the lines.
+#' @param yl the bottom and top boundaries for the height of
+#'   the lines.
+#' @param ... additional parameters for the
+#'   \code{\link[graphics]{segments}} function.
+#'
+#' @examples
+#' plot( rnorm(100), rnorm(100), ylim = c(-3,3) )
+#' vertLines( -2:2, c(-4,4) )
+#'
+#' @export
+
+vertLines = function( xval, yl, ... ) {
+
+  l = length( xval )
+
+  segments( xval, rep( yl[1], l ),
+            xval, rep( yl[2], l ), ... )
+
+}
+
+# Lookup - 31
+#' Fit a Basic Piecewise Regresssion
+#'
+#' Given an indepdent and dependent variable, along
+#' with a vector of break points, fits a basic
+#' piecewise regression to the data.
+#'
+#' @param x the independent (predictor) variable.
+#' @param y the dependent variable.
+#' @param breaks a vector of break points (in the same
+#'   scale as the independent variable).
+#' @param ... additional parameters for the
+#'   \code{\link[stats]{lm}} function.
+#'
+#' @return A list with the output from the
+#'   \code{\link[stats]{lm}} function,
+#'   a data frame with the dummy coding used to
+#'   construct the  piecewise regression, and
+#'   x and y-axis values that can be used for
+#'   plotting the estimated line segments.
+#'
+#' @examples
+#' # Define generating parameters
+#' beta = c( 1, 1, 1, -1 )
+#' sigma = .5
+#'
+#' # Define break point
+#' breaks = 0
+#'
+#' # Simulate data
+#' x = runif( 100, -1, 1 ) # Predictor
+#' # Define design matrix
+#' X = matrix( 1, 100, 2 )
+#' X[ x > breaks, 1] = 0; X[ x <= breaks, 2] = 0
+#' X = cbind( X, X*x )
+#' colnames( X ) = c( 'I1', 'I2', 'S1', 'S2' )
+#' # Generate dependent variable
+#' y = as.vector( X %*% cbind( beta ) )
+#' y = y + rnorm( 100, 0, sigma )
+#'
+#' # Fit piecewise regression
+#' fit = simplePiecewiseReg( x, y, breaks )
+#' summary( fit$lm )
+#'
+#' Plot results
+#' plot( x, y, pch = 19 )
+#' lines( fit$xa, fit$ya )
+#'
+#' @export
+
+simplePiecewiseReg = function( x, y, breaks, ... ) {
+
+  # Number of breaks
+  nb = length( breaks )
+  nbp = nb + 1
+
+  # Number of observations
+  n = length( y )
+
+  # Initialize matrix for x and y values
+  M = matrix( NA, n, 2 + nbp*2 )
+  M[,1] = x; M[,2] = y;
+
+  elbows = data.frame(
+    lb = c( min(x) - 1, breaks ),
+    ub = c( breaks, max(x) ) )
+
+  # Separate intercepts for each segment
+  M[ , 1:nbp + 2 ] = apply( elbows, 1,
+                            function(x)
+                              as.numeric(
+                                M[,1] > x[1] & M[,1] <= x[2] ) )
+  # Separate slopes for each segment
+  M[ , 1:nbp + nbp + 2 ] =
+    M[ , 1:nbp + 2 ] * x
+
+  # Define variable labels
+  cn = c(
+    'x', 'y',
+    paste( 'I', 1:nbp, sep = '' ),
+    paste( 'S', 1:nbp, sep = '' ) )
+  colnames( M ) = cn
+
+  # Convert to data frame
+  M = as.data.frame( M )
+
+  # Create formula for regression
+  piecewise_reg_formula =
+    paste( 'y ~ -1 + ',
+           paste( cn[ grep( 'I', cn ) ], collapse = ' + ' ),
+           ' + ',
+           paste( cn[ grep( 'S', cn ) ], collapse = ' + ' ),
+           collapse = '' )
+  piecewise_reg_formula =
+    as.formula( piecewise_reg_formula )
+
+  # Fit piecewise regression
+  fit = lm( piecewise_reg_formula, data = M, ... )
+
+  # Output
+  out = list(
+    lm = lm( piecewise_reg_formula, data = M, ... ),
+    data = M )
+
+  # To plot unbroken segments, subsequent
+  # segments following the first must
+  # start from the previous value
+
+  # Create indices to insert previous values
+  # into data matrix
+  break_pos = sapply( breaks, function(x)
+    min( which( M[,1] >= x ) ) )
+  break_pos = c( 1, break_pos, n )
+  index1 = numeric( n + nb )
+  index2 = numeric( n + nb )
+  inc = 0
+  for ( i in 2:length( break_pos ) ) {
+    val2 = break_pos[i-1]:break_pos[i]
+    val = val2
+    if ( i > 2 ) val[1] = val2[1] + 1
+    index1[1:length(val) + inc] = val
+    index2[1:length(val) + inc] = val2
+    inc = inc + length(val)
+  }
+  # Create new matrix of data to use to
+  # generate x and y values for plotting
+  # purposes
+  xa = seq( range(x)[1], range(x)[2], length = 100 )
+
+  # Initialize matrix for x and y values
+  PM = matrix( NA, 100, nbp*2 )
+
+  elbows = data.frame(
+    lb = c( min(xa) - 1, breaks ),
+    ub = c( breaks, max(xa) ) )
+
+  # Separate intercepts for each segment
+  PM[ , 1:nbp ] = apply( elbows, 1,
+                            function(x)
+                              as.numeric(
+                                xa > x[1] & xa <= x[2] ) )
+  # Separate slopes for each segment
+  PM[ , 1:nbp + nbp ] =
+    PM[ , 1:nbp ] * xa
+
+  # Generate plotting values
+  out$xa = xa
+  out$ya = PM %*% cbind( coef( fit ) )
+
+  return( out )
+}
+
+# Lookup - 32
+#' Add Basic Color Map to a Plot
+#'
+#' @param Z a matrix with the numeric values
+#'   to map to a set of colors, or a color
+#'   map list object of class 'CM' (the
+#'   output for this function).
+#' @param vr an optional vector giving the lower and
+#'   upper boundaries for to use when mapping the
+#'   values to colors (defaults to the range for Z).
+#' @param nc the number of equally-spaced
+#'   intervals to use when mapping the
+#'   values to colors (default approach needs an odd
+#'   number).
+#' @param clr the color values to which values should
+#'   be mapped.
+#' @param z the endpoints for the intervals to use
+#'   when mapping the values to colors (need to be
+#'   sequential and equal to the number of colors plus one).
+#' @param border controls the border for each color square.
+#' @param add logical; if true, adds the color map to an
+#'   existing plot.
+#' @param return logical; if true, returns a color map list
+#'   object.
+#' @param ... Additional inputs for the
+#'   \code{\link[graphics]{polygon}} function.
+#'
+#' @return If indicated, returns a color map list object
+#'   consisting of...
+#'   \itemize{
+#'     \item Z: the original matrix of data.
+#'     \item cmap: a list with z, the endpoints
+#'       of the intervals used to map colors to values,
+#'       and clr, the set of colors to which values
+#'       were assigned.
+#'     \item x: a matrix with the x-axis values for
+#'       each color cell for the \code{polygon} function.
+#'     \item y: a matrix with the y-axis values for
+#'       each color cell for the \code{polygon} function.
+#'     \item clr: a list giving 1) the color for each cell
+#'       in the map, 2) the x-axis position, 3) the y-axis
+#'       position, and 4) the associated value.
+#'     \item xl: the lower and upper intervals for the
+#'       width of the color map.
+#'     \item yl; the lower and upper intervals for
+#'       the height of the color map.
+#'   }
+#'
+#' @examples
+#' # Generate a correlation matrix
+#' n = 5 # Number of variables
+#' A = matrix( runif(n^2)*2-1, ncol = n )
+#' # Covariance matrix
+#' S = t(A) %*% A
+#' Z = cov2cor( S )
+#'
+#' # Create a blank plot
+#' plot( c(0,5), c(0,5), type = 'n', xlab = 'X', ylab = 'Y' )
+#' CM = addColorMap( Z )
+#'
+#' # Custom color map
+#' plot( c(0,5), c(0,5), type = 'n', xlab = 'X', ylab = 'Y' )
+#' addColorMap( Z, clr = heat.colors(11), return = F )
+#'
+#' # Custom intervals
+#' plot( c(0,5), c(0,5), type = 'n', xlab = 'X', ylab = 'Y' )
+#' z = c( -1, -.75, -.5, 0, .5, .75, 1 ); nc = length(z)
+#' addColorMap( Z, z = z, nc = nc, return = F )
+#'
+#' # Create a color map initially, then add to plot
+#' Z = matrix( runif(40), 10, 4 )
+#' CM = addColorMap( Z, clr = heat.colors(11), add = F )
+#' plot( CM )
+#'
+#' @export
+
+addColorMap = function( Z,
+                        vr = NULL,
+                        nc = 11,
+                        clr = NULL,
+                        z = NULL,
+                        border = NA,
+                        add = T,
+                        return = T,
+                        ... ) {
+
+  # If an existing color map list object
+  # is provided
+  if ( is.CM( Z ) ) {
+    CM = Z
+
+    # Dimensions
+    nx = ncol( CM$Z )
+    ny = nrow( CM$Z )
+  }
+
+  # If an existing color map list is
+  # not provided
+  if ( !is.CM( Z ) ) {
+
+    # Dimensions
+    nx = ncol( Z )
+    ny = nrow( Z )
+
+    # Range
+    if ( is.null( vr ) ) {
+      vr[1] = min( Z )
+      vr[2] = max( Z )
+    }
+
+    # Default colors
+    if ( is.null( clr ) ) {
+
+      # Set to odd number
+      if ( nc %% 2 != 1 ) {
+        nc = nc + 1
+        string = paste(
+          'Default colors require odd number' )
+        warning( string, call. = FALSE )
+      }
+
+      clr = c(
+        rgb( seq( 0, .8, length = (nc-1)/2 ), 1, 1 ),
+        rgb( 1, 1, 1 ),
+        rev( rgb( 1, seq( 0, .8, length = (nc-1)/2 ), 1 ) ) )
+
+    }
+
+    # Default intervals to use for mapping values
+    # to colors
+    if ( is.null( z ) ) {
+
+      z = seq( vr[1], vr[2], length = nc + 1 )
+
+    }
+
+    # Check that number of colors/intervals
+    # are correct
+    if ( !is.null( clr ) & !is.null( z ) ) {
+
+      if ( !( length(clr) = length( z ) - 1 ) ) {
+
+        string = paste(
+          'Incorrect number of intervals to map',
+          'values to colors - using defaults.' )
+        warning( string, call. = FALSE )
+
+        # Set to odd number
+        if ( nc %% 2 != 1 ) {
+          nc = nc + 1
+          string = paste(
+            'Default colors require odd number' )
+          warning( string, call. = FALSE )
+        }
+
+        # Use default valus
+        clr = c(
+          rgb( seq( 0, .8, length = (nc-1)/2 ), 1, 1 ),
+          rgb( 1, 1, 1 ),
+          rev( rgb( 1, seq( 0, .8, length = (nc-1)/2 ), 1 ) ) )
+        z = seq( vr[1], vr[2], length = nc + 1 )
+
+      } else {
+        nc = length( clr )
+      }
+    }
+
+    # List of plotting variables
+    CM = list(
+      Z = Z,
+      cmap = list(
+        z = z,
+        clr = clr ),
+      x = cbind(
+        rep( 0:(nx-1), each = ny ),
+        rep( 0:(nx-1), each = ny ),
+        rep( 1:nx, each = ny ),
+        rep( 1:nx, each = ny ) ),
+      y = cbind(
+        rep( 0:(ny-1), nx ),
+        rep( 1:ny, nx ),
+        rep( 1:ny, nx ),
+        rep( 0:(ny-1), nx ) )
+    )
+
+    # Specify color gradient
+    CM$clr = data.frame( clr = rep( rgb( 0,0,0 ), nx * ny ),
+                         x = NA, y = NA,
+                         z = NA,
+                         stringsAsFactors = F )
+
+    # Loop over matrix cells
+    inc = 1
+    for ( i in 1:nx ) {
+      for ( j in ny:1 ) {
+        sel = sum( CM$Z[j,i] >= CM$cmap$z[ -( nc + 1 ) ] )
+        CM$clr$clr[inc] =
+          CM$cmap$clr[sel]
+        CM$clr$x[inc] = i; CM$clr$y[inc] = j
+        CM$clr$z[inc] = CM$cmap$z[sel]
+        inc = inc + 1
+      }
+    }
+
+    xl = c( 0, nx ); yl = c( 0, ny )
+    CM$xl = xl; CM$yl = yl
+
+    # Create a 'CM' class
+    class( CM ) = 'CM'
+
+  }
+
+  # Add color map
+  if ( add ) {
+
+    # Loop over each cell
+    for ( i in 1:(nx*ny) ) {
+
+      polygon( CM$x[i,],
+               CM$y[i,],
+               col = CM$clr$clr[i],
+               border = border,
+               ... )
+
+    }
+  }
+
+  # If indicated, return color map list object
+  if ( return & !is.CM( Z ) ) return( CM )
+}
+
+
+#' @rdname addColorMap
+#' @export
+is.CM = function(x) inherits(x, "CM")
+
+#' @rdname addColorMap
+#' @export
+print.CM = function( x, digits = 2, ... ) {
+
+  nc = length( x$cmap$clr )
+  out = data.frame(
+    Colors = x$cmap$clr,
+    Midpoints = x$cmap$z[-(nc+1)] + diff(x$cmap$z)/2,
+    Lower = x$cmap$z[-(nc+1)],
+    Upper = x$cmap$z[-1]
+  )
+  print( out, digits = digits, ... )
+
+}
+
+#' @rdname addColorMap
+#' @export
+plot.CM = function( x,
+                    type = 'n',
+                    xlab = ' ',
+                    ylab = ' ',
+                    xaxt = 'n',
+                    yaxt = 'n',
+                    bty = 'n',
+                    ... ) {
+
+  xl = x$xl; yl = x$yl
+  plot( xl, yl,
+        type = type,
+        xlab = xlab,
+        ylab = ylab,
+        xaxt = xaxt,
+        yaxt = yaxt,
+        bty = bty,
+        ... )
+  addColorMap( x, return = F )
+
+}
+
