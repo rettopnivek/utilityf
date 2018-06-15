@@ -34,7 +34,8 @@
 # Lookup - 29:  Add Horizontal Lines to a Plot
 # Lookup - 30:  Add Vertical Lines to a Plot
 # Lookup - 31:  Fit a Basic Piecewise Regresssion
-# Lookup - 32:  addColorMap
+# Lookup - 32:  Add Basic Color Map to a Plot
+# Lookup - 33:  Raise a Value to a Power
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -2062,5 +2063,39 @@ plot.CM = function( x,
         ... )
   addColorMap( x, return = F )
 
+}
+
+# Lookup - 33
+#' Raise a Value to a Power
+#'
+#' This function raises a value x to a power a.
+#' It is useful for notational purposes,
+#' clearly separting the value and power from
+#' other aspects of an equation.
+#'
+#' @param x a numerica value.
+#' @param a the exponent.
+#'
+#' @return Returns the result of raising x to
+#'   the power a.
+#'
+#' @examples
+#' x = 2^4
+#' y = pow( 2, 4 )
+#' x == y
+#'
+#' # Sometimes it can be hard to determine
+#' # what is being raised to a power
+#' x = 2 * 13 ^ 4 / 8
+#' # This function makes it easier to tell
+#' x = 2 * pow( 13, 4 ) / 8
+#'
+#' @export
+
+pow = function( x, a ) {
+
+  out = x^a
+
+  return( out )
 }
 
