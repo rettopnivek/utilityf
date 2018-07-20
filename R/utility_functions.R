@@ -36,6 +36,8 @@
 # Lookup - 31:  Fit a Basic Piecewise Regresssion
 # Lookup - 32:  Add Basic Color Map to a Plot
 # Lookup - 33:  Raise a Value to a Power
+# Lookup - 34:  Custom function to standardize a variable
+# Lookup - 35:  Functions to evaluate run times
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -2073,7 +2075,7 @@ plot.CM = function( x,
 #' clearly separting the value and power from
 #' other aspects of an equation.
 #'
-#' @param x a numerica value.
+#' @param x a numerical value.
 #' @param a the exponent.
 #'
 #' @return Returns the result of raising x to
@@ -2097,5 +2099,93 @@ pow = function( x, a ) {
   out = x^a
 
   return( out )
+}
+
+# Lookup - 34
+#' Custom function to standardize a variable
+#'
+#' This function centers and scales a variable,
+#' and adds attributes that allow the function
+#' to convert the standardized variable back
+#' into its original scale.
+#'
+#' @param x a numerical value.
+#' @param reverse logical; if true, the function
+#'   extracts the 'mean' and 'scale' attributes
+#'   and reverses the standardization.
+#'
+#' @return If reverse is FALSE, returns the standardized
+#' values for x, with attributes giving the mean and scale;
+#' otherwise, returns the raw, unstandardized values
+#' of x.
+#'
+#' @examples
+#' x = runif( 30 )
+#' # Standardize the variable
+#' z = my_standardize( x )
+#' # Unstandardize the variable
+#' y = my_standardize( x, reverse = T )
+#' all( x == y )
+#'
+#' @export
+
+my_standardize = function( x, reverse = F ) {
+
+  if ( !reverse ) {
+    m = mean( x, na.rm = T )
+    s = sd( x, na.rm = T )
+    out = ( x - m ) / s
+    attributes( out ) = list( mean = m, scale = s )
+  } else {
+    m = attributes( x )$mean
+    s = attributes( x )$scale
+    out = x * s + m
+    attributes( out ) = NULL
+  }
+
+  return( out )
+}
+
+# Lookup - 35
+#' Functions to evaluate run times.
+#'
+#' The functions \code{tick} and \code{tock} can be
+#' used to roughly estimate the run time of a segment
+#' of code.
+#'
+#' @return The function \code{tick} creates a global
+#' variable 'run_time' with the current system time.
+#' The function \code{tock} then updates 'run_time'
+#' with the difference between the current system
+#' time and the previous value of 'run_time'.
+#'
+#' @examples
+#' tick()
+#' Sys.sleep(2.5)
+#' tock()
+#' print( run_time )
+#'
+#' @export
+
+tick = function() {
+
+  # Create a global variable with
+  # the current time
+  run_time <<- Sys.time()
+
+}
+
+#' @rdname tick
+#' @export
+tock = function() {
+
+  if ( exists( 'run_time' ) ) {
+    run_time <<- Sys.time() - run_time
+  } else {
+    warning( paste(
+      "Variable 'run_time' does not exist;",
+      "Use 'tick()' to create variable." ))
+  }
+
 }
 

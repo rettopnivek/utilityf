@@ -7,7 +7,7 @@
 pow(x, a)
 }
 \arguments{
-\item{x}{a numerica value.}
+\item{x}{a numerical value.}
 
 \item{a}{the exponent.}
 }
