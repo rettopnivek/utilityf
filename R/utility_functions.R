@@ -38,6 +38,9 @@
 # Lookup - 33:  Raise a Value to a Power
 # Lookup - 34:  Custom function to standardize a variable
 # Lookup - 35:  Functions to evaluate run times
+# Lookup - 36:  Function to identify any NA values by row
+# Lookup - 37:  Transform hit/false alarm rates into SDT parameters
+# Lookup - 38:  Estimate parameters for a two-boundary unbiased wiener process
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -2188,4 +2191,339 @@ tock = function() {
   }
 
 }
+
+# Lookup - 36
+#' Function to identify any NA values by row
+#'
+#' This function identifies rows in a matrix
+#' or data frame that contain any NA values.
+#'
+#' @param x a matrix or data frame.
+#'
+#' @return A logical vector with values of
+#' \code{TRUE} for rows with any \code{NA}
+#' values.
+#'
+#' @examples
+#' x = matrix( rnorm(9), 3, 3 )
+#' x[2,3] = NA
+#' findNA( x )
+#' x = data.frame( A = c( 1, 2, NA ), B = 0 )
+#' findNA( x )
+#'
+#' @export
+
+findNA = function( x ) {
+
+  # Initialize output
+  out = NULL
+
+  # If input is matrix or data frame
+  if ( is.matrix( x ) |
+       is.data.frame( x ) ) {
+    # Check whether NA values are present in
+    # any of the rows
+    out = apply( x, 1, function(r) any( is.na(r) ) )
+  } else {
+    # Throw an error message
+    string = "Input should be a matrix or data frame"
+    stop( string, call. = F )
+  }
+
+  return( out )
+}
+
+# Lookup - 37
+#' Transform hit/false alarm rates into SDT parameters
+#'
+#' Calculates d' and c parameter estimates for the
+#' equal-variance Signal Detection Theory (SDT) model
+#' for binary data using the algebraic method.
+#' Also computes alternative metrics, including
+#' A', B, and B'' (Stanislaw & Todorov, 1993).
+#'
+#' @param dat either 1) a vector of four values, the
+#'   frequencies for hits and false alarms followed
+#'   by the associated total number of trials for each,
+#'   or 2) a vector of two values, the proportion of
+#'   hits and false alarms.
+#' @param centered logical; if \code{TRUE} uses the
+#'   parameterization in which the distributions are
+#'   equidistant from 0.
+#' @param correct the type of correction to use, where...
+#'   \itemize{
+#'     \item 0 = none;
+#'     \item 1 = The log-linear approach, adds .5 to
+#'     the hits andfalse alarm frequencies, then adds
+#'     1 to the total number of trials (Hautus, 1995);
+#'     \item 2 = The conditional approach, where only
+#'     proportions equal to 0 or 1 are adjusted by
+#'     .5/N or (N-.5)/N respectively, where N is the
+#'     associated number of total trials for the given
+#'     proportion (Macmillan & Kaplan, 1985).
+#'   }
+#'
+#' @return A named vector with five values: 1) d', the estimate
+#' of separation between the noise and signal distributions;
+#' 2) c, the estimate of response bias (the cut-off determining
+#' whether a response is 'Signal' versus 'Noise'); 3) A', a
+#' non-parametric estimate of discrimination; 4) B, the ratio
+#' of whether a person favors responding 'Signal' over
+#' whether he or she favors responding 'Noise'; 5) B'', a
+#' non-parametric estimate of B.
+#'
+#' @references
+#' Hautus, M. J. (1995). Corrections for extreme proportions and their
+#'   biasing effects on estimated values of d'. Behavior Research Methods
+#'   Instruments, & Computers, 27(1), 46 - 51. DOI: 10.3758/BF03203619
+#'
+#' Macmillan, N. A. & Kaplan, H. L. (1985). Detection theory analysis
+#'   of group data: estimating sensitivity from average hit and
+#'   false-alarm rates. Psychological Bulletin, 98(1), 185 - 199.
+#'
+#' Stanislaw, H. & Todorov, N. (1993). Calculation of signal detection
+#'   theory measures. Behavior Research Methods, Instruments, & Computers,
+#'   31, 137 - 149.
+#'
+#' @examples
+#' # Hit/false alarm rate when d' = 1 and c = 0
+#' x = c( H = pnorm( 0, -.5 ), FA = pnorm( 0, .5 ) )
+#' round( binarySDT( x ), 2 )
+#' # Hit/false alarm rate when d' = 1 and c = .25
+#' x = c( H = pnorm( .25, -.5 ), FA = pnorm( .25, .5 ) )
+#' round( binarySDT( x ), 2 )
+#' # Using frequencies
+#' y = c( round( x*20 ), 20, 20 )
+#' round( binarySDT( y ), 2 )
+#' # Correction for extreme values
+#' y = c( 10, 6, 10, 10 )
+#' round( binarySDT( y, correct = 1 ), 2 )
+#' @export
+
+binarySDT = function( dat, centered = T, correct = 0 ) {
+
+  # Initialize values
+  out = c( "d'" = NA, "c" = NA, "A'" = NA, "B" = NA, "B''" = NA )
+
+  H = NULL; FA = NULL
+
+  # Extract data
+
+  # If counts and trial numbers are provided
+  if ( length( dat ) == 4 ) {
+
+    # Extract frequencies
+    S = dat[1]; N = dat[2];
+    # Extract total number of trials
+    Ns = dat[3]; Nn = dat[4]
+
+    # Determine hits and false-alarm rates
+    H = S/Ns; FA = N/Nn;
+
+    # Apply corrections if indicated
+    if ( correct == 1 ) {
+      H = (S+.5)/(Ns+1)
+      FA = (N+.5)/(Nn+1)
+    }
+    if ( correct == 2 ) {
+      if ( H == 0 ) H = .5/Ns
+      if ( FA == 0 ) FA = .5/Nn
+      if ( H == 1 ) H = (Ns-.5)/Ns
+      if ( FA == 1 ) FA = (Nn-.5)/Nn
+    }
+
+  }
+
+  # If only proportions are provided
+  if ( length( dat ) == 2 ) {
+
+    # Extract hits and false-alarm rates
+    H = dat[1]; FA = dat[2]
+
+    if ( correct > 0 ) {
+      string = paste(
+        'Correction cannot be applied',
+        'using proportions; frequencies',
+        'and total number of trials are',
+        'required.' )
+      warning( string, call. = F )
+    }
+  }
+
+  if ( !is.null(H) & !is.null(FA) ) {
+
+    if ( !centered ) {
+
+      # Obtain estimate of d'
+      dp_est = qnorm( H ) - qnorm( FA )
+
+      # Obtain estimate of criterion
+      k_est = qnorm( 1 - FA )
+
+    } else {
+
+      # Obtain estimate of criterion
+      k_est = -.5*( qnorm( H ) + qnorm( FA ) )
+
+      # Obtain estimate of d'
+      dp_est = 2*( qnorm( H ) + k_est )
+
+    }
+
+    # Compute additional values
+    num = pow( H - FA, 2 ) + (H - FA)
+    denom = 4*max(H,FA) - 4*H*FA
+    Ap_est = sign( H - FA )*(num/denom)
+
+    log_beta_est = .5*( pow( qnorm( FA ), 2 ) - pow( qnorm( H ), 2 ) )
+
+    num = H*(1-H) - FA*(1-FA)
+    denom = H*(1-H) + FA*(1-FA)
+    beta_pp = sign( H - FA)*( num/denom )
+
+    out[1] = dp_est
+    out[2] = k_est
+    out[3] = Ap_est
+    out[4] = exp( log_beta_est )
+    out[5] = beta_pp
+
+  }
+
+  return( out )
+}
+
+# Lookup - 38
+#' Estimate parameters for a two-boundary unbiased wiener process
+#'
+#' Estimates the drift rate, boundary separation, and
+#' non-decision time for a two-boundary wiener process
+#' with an equidistant starting point using a R function
+#' adapted from Wagenmaker et al. (2007).
+#'
+#' @param dat a vector of inputs:
+#'   \enumerate{
+#'     \item Total number of trials;
+#'     \item Number of correct responses;
+#'     \item Mean response time for correct responses;
+#'     \item Variance for corrct response times;
+#'   }
+#' @param s the scaling parameter (typically set to either 0.1 or 1)
+#'
+#' @return An estimate of the drift rate, boundary separation,
+#' and non-decision time. Bias is fixed to 0.5.
+#'
+#' @references
+#' Wagenmakers, E. J., Van Der Maas, H. L., & Grasman, R. P.
+#'   (2007). An EZ-diffusion model for response time and accuracy.
+#'   Psychonomic bulletin & review, 14, 3-22.
+#'   https://doi.org/10.3758/BF03194023.
+#'
+#' @examples
+#' x = c( N = 100, Correct = 80, MRT = .8, VRT = .4^2 )
+#' EZdiffusion( x )
+#' @export
+
+EZdiffusion = function( dat, s = 1 ) {
+
+  # Initialize output
+  out = c(
+    drift_rate = NA,
+    bias = NA,
+    boundary_sep = NA,
+    non_decision_time = NA
+  )
+
+  # Extract data
+  Trials = dat[1]
+  Correct = dat[2]
+  MRT = dat[3]
+  VRT = dat[4]
+
+  # Check for invalid inputs
+  invalid_inputs = c(
+    # Missing data
+    any( is.na( dat ) ),
+    # Non-positive mean response time
+    MRT <= 0,
+    # Non-positive variance
+    VRT <= 0,
+    # Number of trials is not an integer
+    Trials %% 1 != 0,
+    # Number of correct responses is not an integer
+    Correct %% 1 != 0,
+    # Number of correct responses exceeds number of trials
+    Correct > Trials
+  )
+
+  invalid_inputs_warning = c(
+    'NA values',
+    'Non-positive mean response time',
+    'Non-positive variance for response time',
+    'Non-integer value for trials',
+    'Non-interger value for frequency correct',
+    'Frequency correct exceeds number of trials'
+  )
+
+  # Return NA for invalid inputs
+  if ( any( invalid_inputs ) ) {
+    string = paste(
+      'Invalid inputs:\n',
+      paste( invalid_inputs_warning[invalid_inputs], collapse = '\n' ),
+      sep = '' )
+    warning( string, call. = F )
+    return( out )
+  }
+
+  # Proportion of correct responses
+  Pc = Correct / Trials
+
+  # Scaling parameter
+  s2 = pow( s, 2 )
+
+  # No information if P( Correct ) = 0, 0.5, or 1
+  if ( Pc %in% c( 0, .5, 1 ) ) {
+
+    warning( paste(
+      'Insufficient information for estimation',
+      ' - an edge correction will be applied' ),
+      call. = FALSE )
+
+    # For the edge correction, adjust results
+    # by one half of an error:
+    if ( Pc == 1 )
+      Pc = 1 - 1 / ( 2*Trials)
+    if ( Pc == 0 )
+      Pc = 1 + 1 / ( 2*Trials)
+    if ( Pc == .5 )
+      Pc = .5 + 1 / ( 2*Trials)
+
+  }
+
+  # Compute the log odds for P( Correct )
+  L = qlogis(Pc)
+  x = L * ( L * pow( Pc, 2 ) - L * Pc + Pc - .5 )/VRT
+
+  # Estimate drift and boundary separation
+  # from P( Correct ) and the variance of correct RT
+  drift_rate = sign( Pc - .5 ) * s * pow( x, 1/4 )
+  boundary_sep = s2 * L / drift_rate
+
+  # Estimate the non-decision time
+  y = -drift_rate * boundary_sep/s2
+  MDT = ( boundary_sep/( 2 * drift_rate) ) *
+    ( 1 - exp(y) )/( 1 + exp(y) )
+  non_decision_time = MRT - MDT
+
+  # Return estimates of parameters
+  # if ( Correct / Trials == .5 ) drift_rate = 0
+  out[1] = drift_rate
+  out[2] = 0.5
+  out[3] = boundary_sep
+  out[4] = non_decision_time
+
+  return( out )
+}
+
+
+
 
