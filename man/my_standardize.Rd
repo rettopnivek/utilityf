@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility_functions.R
 \name{my_standardize}
 \alias{my_standardize}
-\title{Custom function to standardize a variable}
+\title{Custom Function to Standardize a Variable}
 \usage{
 my_standardize(x, reverse = F)
 }

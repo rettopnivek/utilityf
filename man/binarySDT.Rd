@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility_functions.R
 \name{binarySDT}
 \alias{binarySDT}
-\title{Transform hit/false alarm rates into SDT parameters}
+\title{Transform Hit/False Alarm Rates into SDT Parameters}
 \usage{
 binarySDT(dat, centered = T, correct = 0)
 }

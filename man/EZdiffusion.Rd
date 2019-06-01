@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility_functions.R
 \name{EZdiffusion}
 \alias{EZdiffusion}
-\title{Estimate parameters for a two-boundary unbiased wiener process}
+\title{Estimate Parameters for a Two-Boundary Unbiased Wiener Process}
 \usage{
 EZdiffusion(dat, s = 1)
 }

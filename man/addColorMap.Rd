@@ -7,15 +7,15 @@
 \alias{plot.CM}
 \title{Add Basic Color Map to a Plot}
 \usage{
-addColorMap(Z, vr = NULL, nc = 11, clr = NULL, z = NULL, border = NA,
-  add = T, return = T, ...)
+addColorMap(Z, vr = NULL, nc = 11, clr = NULL, z = NULL,
+  border = NA, add = T, return = T, ...)
 
 is.CM(x)
 
 \method{print}{CM}(x, digits = 2, ...)
 
-\method{plot}{CM}(x, type = "n", xlab = " ", ylab = " ", xaxt = "n",
-  yaxt = "n", bty = "n", ...)
+\method{plot}{CM}(x, type = "n", xlab = " ", ylab = " ",
+  xaxt = "n", yaxt = "n", bty = "n", ...)
 }
 \arguments{
 \item{Z}{a matrix with the numeric values

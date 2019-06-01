@@ -3,7 +3,7 @@
 \name{tick}
 \alias{tick}
 \alias{tock}
-\title{Functions to evaluate run times.}
+\title{Functions to Evaluate Run Times}
 \usage{
 tick()
 

@@ -2,17 +2,23 @@
 % Please edit documentation in R/utility_functions.R
 \name{findNA}
 \alias{findNA}
-\title{Function to identify any NA values by row}
+\title{Function to Identify NA Values by Row}
 \usage{
-findNA(x)
+findNA(x, any = T)
 }
 \arguments{
 \item{x}{a matrix or data frame.}
+
+\item{any}{logical; if \code{TRUE} check
+if any observation in the row is an \code{NA}
+value, else checks if all observations are
+\code{NA}.}
 }
 \value{
 A logical vector with values of
 \code{TRUE} for rows with any \code{NA}
-values.
+values (or rows where all values are \code{NA}
+if \code{any} is \code{FALSE}).
 }
 \description{
 This function identifies rows in a matrix
@@ -24,5 +30,10 @@ x[2,3] = NA
 findNA( x )
 x = data.frame( A = c( 1, 2, NA ), B = 0 )
 findNA( x )
+
+#' x = matrix( rnorm(9), 3, 3 )
+x[2,] = NA
+x[3,1] = NA
+findNA( x, any = F )
 
 }

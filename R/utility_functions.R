@@ -36,11 +36,14 @@
 # Lookup - 31:  Fit a Basic Piecewise Regresssion
 # Lookup - 32:  Add Basic Color Map to a Plot
 # Lookup - 33:  Raise a Value to a Power
-# Lookup - 34:  Custom function to standardize a variable
-# Lookup - 35:  Functions to evaluate run times
-# Lookup - 36:  Function to identify any NA values by row
-# Lookup - 37:  Transform hit/false alarm rates into SDT parameters
-# Lookup - 38:  Estimate parameters for a two-boundary unbiased wiener process
+# Lookup - 34:  Custom Function to Standardize a Variable
+# Lookup - 35:  Functions to Evaluate Run Times
+# Lookup - 36:  Function to Identify NA Values by Row
+# Lookup - 37:  Transform Hit/False Alarm Rates into SDT Parameters
+# Lookup - 38:  Estimate Parameters for a Two-Boundary Unbiased Wiener Process
+# Lookup - 39:  Plot a Heatmap for a Correlation Matrix
+# Lookup - 40:  Template for Standard Plotting Code
+# Lookup - 41:  Print a Nicely Formatted Table
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -1781,9 +1784,9 @@ simplePiecewiseReg = function( x, y, breaks, ... ) {
 
   # Separate intercepts for each segment
   PM[ , 1:nbp ] = apply( elbows, 1,
-                            function(x)
-                              as.numeric(
-                                xa > x[1] & xa <= x[2] ) )
+                         function(x)
+                           as.numeric(
+                             xa > x[1] & xa <= x[2] ) )
   # Separate slopes for each segment
   PM[ , 1:nbp + nbp ] =
     PM[ , 1:nbp ] * xa
@@ -2105,7 +2108,7 @@ pow = function( x, a ) {
 }
 
 # Lookup - 34
-#' Custom function to standardize a variable
+#' Custom Function to Standardize a Variable
 #'
 #' This function centers and scales a variable,
 #' and adds attributes that allow the function
@@ -2150,7 +2153,7 @@ my_standardize = function( x, reverse = F ) {
 }
 
 # Lookup - 35
-#' Functions to evaluate run times.
+#' Functions to Evaluate Run Times
 #'
 #' The functions \code{tick} and \code{tock} can be
 #' used to roughly estimate the run time of a segment
@@ -2193,16 +2196,21 @@ tock = function() {
 }
 
 # Lookup - 36
-#' Function to identify any NA values by row
+#' Function to Identify NA Values by Row
 #'
 #' This function identifies rows in a matrix
 #' or data frame that contain any NA values.
 #'
 #' @param x a matrix or data frame.
+#' @param any logical; if \code{TRUE} check
+#'   if any observation in the row is an \code{NA}
+#'   value, else checks if all observations are
+#'   \code{NA}.
 #'
 #' @return A logical vector with values of
 #' \code{TRUE} for rows with any \code{NA}
-#' values.
+#' values (or rows where all values are \code{NA}
+#' if \code{any} is \code{FALSE}).
 #'
 #' @examples
 #' x = matrix( rnorm(9), 3, 3 )
@@ -2211,9 +2219,14 @@ tock = function() {
 #' x = data.frame( A = c( 1, 2, NA ), B = 0 )
 #' findNA( x )
 #'
+#' #' x = matrix( rnorm(9), 3, 3 )
+#' x[2,] = NA
+#' x[3,1] = NA
+#' findNA( x, any = F )
+#'
 #' @export
 
-findNA = function( x ) {
+findNA = function( x, any = T ) {
 
   # Initialize output
   out = NULL
@@ -2223,7 +2236,11 @@ findNA = function( x ) {
        is.data.frame( x ) ) {
     # Check whether NA values are present in
     # any of the rows
-    out = apply( x, 1, function(r) any( is.na(r) ) )
+    if ( any ) {
+      out = apply( x, 1, function(r) any( is.na(r) ) )
+    } else {
+      out = apply( x, 1, function(r) all( is.na(r) ) )
+    }
   } else {
     # Throw an error message
     string = "Input should be a matrix or data frame"
@@ -2234,7 +2251,7 @@ findNA = function( x ) {
 }
 
 # Lookup - 37
-#' Transform hit/false alarm rates into SDT parameters
+#' Transform Hit/False Alarm Rates into SDT Parameters
 #'
 #' Calculates d' and c parameter estimates for the
 #' equal-variance Signal Detection Theory (SDT) model
@@ -2393,7 +2410,7 @@ binarySDT = function( dat, centered = T, correct = 0 ) {
 }
 
 # Lookup - 38
-#' Estimate parameters for a two-boundary unbiased wiener process
+#' Estimate Parameters for a Two-Boundary Unbiased Wiener Process
 #'
 #' Estimates the drift rate, boundary separation, and
 #' non-decision time for a two-boundary wiener process
@@ -2524,6 +2541,392 @@ EZdiffusion = function( dat, s = 1 ) {
   return( out )
 }
 
+# Lookup - 39
+#' Plot a Heatmap for a Correlation Matrix
+#'
+#' Generates a heatmap of the upper triangle of a
+#' correlation matrix.
+#'
+#' @param omega a correlation matrix.
+#' @param labels the labels for the rows/columns.
+#' @param ttl an optional title for the figure.
+#' @param new logical; if \code{TRUE} generates a
+#'   new plotting window.
+#' @param lyt an optional matrix specifying the
+#'   layout of the main panel (1) versus
+#'   the side panel (2) with the color gradient.
+#' @param gradient the final end colors for
+#'   the negative and positive correlations, respectively.
+#' @param txtSz the size of the text in the figure.
+#' @param p_mat an optional matrix of p-values corresponding
+#'   to the correlations in \code{omega}.
+#' @param cut_off cut-off for significance.
+#' @param H the height to use if a new plotting window is
+#'   generated.
+#' @param W the width to use if a new plotting window is
+#'   generated.
+#'
+#' @return A heatmap for the upper-triangle portion of the
+#'   correlation matrix.
+#'
+#' @examples
+#' # Load data
+#' data("mtcars")
+#' my_data <- mtcars[, c(1,3,4,5,6,7)]
+#' omega = cor( my_data )
+#' # Generate heatmap
+#' correlationHeatmap( omega, colnames(omega) )
+#'
+#' @export
+
+correlationHeatmap = function( omega,
+                               labels,
+                               ttl = 'Correlation matrix',
+                               new = T,
+                               lyt = NULL,
+                               gradient = c( 'orange',
+                                             'blue' ),
+                               txtSz = 1.25,
+                               p_mat = NULL,
+                               cut_off = .05,
+                               H = 25/3,
+                               W = 20/3 ) {
+
+  # Create new plotting window if specified
+  if ( new ) {
+    x11( width = H, height = W )
+  }
+
+  # Number of rows
+  nr = nrow( omega )
+
+  # Specify row and column indices
+  pos = seq( nrow( omega ), 0, -1 )
+
+  # Include side panel for legend
+  if ( is.null( lyt ) ) {
+    lyt = cbind( 1, 1, 1, 1, 2 )
+  }
+  layout( lyt )
+
+  # x and y-axis limits
+  xl = range( pos )
+  yl = range( pos )
+  # Adjust margins
+  mrg = c( 11, 11, .5, .5 )
+  par( mar = mrg )
+  # Create blank plot
+  blankPlot( xl, yl )
+
+  # Define function to draw a box of desired color
+  draw_box = function( ri, ci, clr = NULL, brd = NULL ) {
+
+    xa = c( ci + 1, ci + 1, ci, ci )
+    ya = c( ri, ri + 1, ri + 1, ri )
+
+    if ( is.null( clr ) ) clr = 'white'
+    if ( is.null( brd ) ) brd = clr
+
+    polygon( rev(pos)[xa], pos[ya], col = clr, border = brd )
+
+  }
+
+  # Specify color gradients
+  r_range = seq( 0, 1, .01 )
+  color_f = colorRampPalette( c( 'white', gradient[2] ) )
+  color_pos = color_f( length( r_range ) )
+  color_f = colorRampPalette( c( 'white', gradient[1] ) )
+  color_neg = color_f( length( r_range ) )
+
+  # Loop over rows and columns
+  for ( ri in 1:nr ) {
+    for ( ci in 1:nr ) {
+
+      # Extract correlation
+      cur_R = round( omega[ri,ci], 2 )
+
+      # Set gradient based on correlation value
+      if ( cur_R > 0 ) {
+        cur_clr = color_pos[ round( r_range, 2 ) ==
+                               round( cur_R, 2 ) ]
+      }
+      if ( cur_R < 0 ) {
+        cur_clr = color_neg[ round( r_range, 2 ) ==
+                               round( abs(cur_R), 2 ) ]
+      }
+
+      # Suppress diagonal
+      if ( ri == ci ) {
+        cur_clr = 'white'
+      }
+
+      # Suppress lower triangle part
+      if ( ri >= ci ) {
+        cur_clr = 'white'
+      }
+
+      cur_brd = NULL
+
+      # Draw box
+      draw_box( ri, ci, clr = cur_clr, brd = cur_brd )
+    }
+  }
+
+  if ( !is.null( p_mat ) ) {
+
+    # Loop over rows and columns again
+    for ( ri in 1:nr ) {
+      for ( ci in 1:nr ) {
+
+        # Extract correlation
+        cur_R = round( omega[ri,ci], 2 )
+        # Extract p-value
+        cur_p = p_mat[ri,ci]
+        if ( is.na( cur_p ) ) cur_p = 1
+
+        # Re-draw boxes with a border
+        # only when p-value is less than cut-off
+        if ( cur_p < cut_off ) {
+          if ( ri < ci ) {
+
+            # Set gradient based on correlation value
+            if ( cur_R > 0 ) {
+              cur_clr = color_pos[ round( r_range, 2 ) ==
+                                     round( cur_R, 2 ) ]
+            }
+            if ( cur_R < 0 ) {
+              cur_clr = color_neg[ round( r_range, 2 ) ==
+                                     round( abs(cur_R), 2 ) ]
+            }
+            cur_brd = 'black'
+
+            # Draw box
+            draw_box( ri, ci, clr = cur_clr, brd = cur_brd )
+          }
+        }
+      }
+    }
+
+
+    # Add label for significance cut-off
+
+    draw_box( nr, 1, clr = 'white', brd = 'black' )
+
+    text( 1.25, .5,
+          paste( 'Significant at p <', cut_off ),
+          pos = 4, cex = txtSz )
+  }
+
+  # Add labels
+  for ( ri in 1:nr ) {
+    text(
+      nr - (ri-1), ri - .5,
+      rev(labels)[ri],
+      pos = 2,
+      xpd = NA,
+      cex = txtSz )
+  }
+
+  # Title for plot
+  mtext( ttl,
+         side = 1, line = 1, cex = txtSz )
+
+  # Add legend for color gradient
+
+  # lbl = rev( seq( -1, 1, .1 ) )
+  lbl = lowerUpper( .1, omega[ lower.tri( omega ) ] )
+  lbl = seq( lbl[1], lbl[2], .1 )
+  lbl = rev( lbl )
+  pos = rev( 0:( length( lbl ) ) )
+  xl = c( 0, 2 )
+  yl = range( pos )
+
+  par( mar = c( mrg[1], 0, mrg[3], mrg[4] ) )
+  blankPlot( xl, yl )
+
+  for ( ri in 1:length( lbl ) ) {
+
+    cur_R = lbl[ri]
+
+    if ( cur_R > 0 ) {
+      cur_clr = color_pos[ round( r_range, 2 ) ==
+                             round( cur_R, 2 ) ]
+    }
+    if ( cur_R < 0 ) {
+      cur_clr = color_neg[ round( r_range, 2 ) ==
+                             round( abs(cur_R), 2 ) ]
+    }
+
+    if ( cur_R == 0 ) {
+      cur_clr = 'white'
+    }
+
+    draw_box( ri, 1, clr = cur_clr )
+  }
+
+  string = as.character( lbl )
+  string[ lbl > 0 ] = paste( " ", string[ lbl > 0 ] )
+  string[ lbl == 0] = " 0.0"
+
+  text( rep( txtSz, length(lbl) ),
+        pos[-1] + .5, string )
+
+  mtext( 'R',
+         side = 1, line = 1, cex = txtSz )
+
+}
+
+# Lookup - 40
+#' Template for Standard Plotting Code
+#'
+#' This function prints to the console a
+#' a template for an R function to generate a
+#' standard plot.
+#'
+#' @return Template of an R function to generate a standard plot.
+#'
+#' @export
+
+plotTemplate = function() {
+
+  string = "
+  plot_f = function( df,
+                     inc,
+                     lbl = c( 'x-axis', 'y-axis' ),
+                     lnSz = 2,
+                     ptSz = 1.25,
+                     axSz = 1.25,
+                     lblSz = 1.15,
+                     new = T ) {
+    # Purpose:
+    # ...
+    # Arguments:
+    # df    - A data frame with the x and y values
+    # inc   - The spacing value for the x and y-axis limits,
+    #         respectively
+    # lbl   - The labels for the x and y-axis, respectively
+    # lnSz  - The width of the lines
+    # ptSz  - The size of the points
+    # axSz  - The text size for the axis values
+    # lblSz - The text size for the axis labels
+    # new   - Logical; if TRUE, a new plotting window is created
+
+    # Setup
+    x = df$x
+    y = df$y
+
+    # If specifed, create new plotting window
+    if ( new ) x11()
+
+    # x and y-axis boundaries
+    xl = lowerUpper( inc[1], x )
+    yl = lowerUpper( inc[2], y )
+
+    # Position of axis labels
+    xax = seq( xl[1], xl[2], inc[1] )
+    yax = seq( yl[1], yl[2], inc[2] )
+
+    # Create blank plot
+    blankPlot( xl, yl )
+
+    # Grid lines
+    horizLines( yax, xl, col = 'grey', lwd = lnSz )
+
+    # Plotting
+    lines( x, y, lwd = lnSz )
+    points( x, y, pch = 19, cex = ptSz )
+
+    # Axes and labels
+    customAxes( xl, yl, lnSz = lnSz )
+
+    # x-axis
+    axis( 1, xax,
+          tick = F, line = -1.5, cex.axis = axSz )
+    mtext( lbl[1],
+           side = 1, line = 1.5, cex = lblSz )
+
+    # y-axis
+    axis( 2, yax,
+          tick = F, line = -1.5, cex.axis = axSz )
+    mtext( lbl[2],
+           side = 2, line = 1.5, cex = lblSz )
+
+  }"
+
+  message( string )
+}
+
+# Lookup - 41
+#' Print a Nicely Formatted Table
+#'
+#' Forthcoming...
+#'
+#' @param tbl a formatted data frame.
+#' @param return logical; if \code{TRUE}, returns
+#'   the character vector with each formatted
+#'   row.
+#'
+#' @return Forthcoming...
+#'
+#' @examples
+#' data( 'mtcars' )
+#' tbl = aggregate( mtcars$mpg, mtcars[,c('cyl','vs')], mean )
+#' tbl$x = round( tbl$x, 1 )
+#' colnames( tbl ) = c( "# of cylinders", "Engine type", "Miles per gallon" )
+#' printTable( tbl )
+#'
+#' @export
+
+printTable = function( tbl, return = F ) {
+
+  # Initialize output
+  out = matrix( " ", nrow( tbl ) + 1, ncol( tbl ) )
+
+  # Loop over columns of table
+  for ( i in 1:ncol( tbl ) ) {
+
+    # Determine maximum number of characters for elements
+    # in the table's column (including the column name)
+    nc = max( c( sapply( as.character( tbl[[i]] ), nchar ),
+                 nchar( colnames(tbl)[i] ) ) )
+
+    # Loop over the table's rows
+    for ( j in 1:( nrow( tbl ) + 1 ) ) {
+
+      if ( j > 1 ) {
+        # Elements in column
+        val = as.character( tbl[[i]] )[j-1]
+      } else {
+        # Column name
+        val = colnames( tbl )[i]
+      }
+      # Current number of characters
+      cur_nc = nchar( val )
+      # If necessary pad out characters with empty spaces
+      if ( cur_nc < nc ) {
+        val = paste( paste( rep( " ", nc - cur_nc ), collapse = "" ),
+                     val, sep = "" )
+        out[j,i] = val
+      } else {
+        out[j,i] = val
+      }
+
+    }
+  }
+
+  # Convert to vector of strings
+  output = apply( out, 1, paste, collapse = " | " )
+  output = sapply( output, function(x) paste( x, "|" ) )
+
+  if ( !return ) {
+    for ( i in 1:length( output ) ) {
+      cat( c( output[i], '\n' ) )
+    }
+  } else {
+    return( output )
+  }
+
+}
 
 
 
