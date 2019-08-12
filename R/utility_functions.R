@@ -24,7 +24,7 @@
 # Lookup - 19:  Estimate Density for Individual Observations
 # Lookup - 20:  Compute Category Proportions
 # Lookup - 21:  Template for Documentation
-# Lookup - 22:  Improved list
+# Lookup - 22:  Improved List of Objects
 # Lookup - 23:  Calculate the First Four Moments
 # Lookup - 24:  Generate Multi-line comments
 # Lookup - 25:  Generate Custom Plot Axes
@@ -44,6 +44,8 @@
 # Lookup - 39:  Plot a Heatmap for a Correlation Matrix
 # Lookup - 40:  Template for Standard Plotting Code
 # Lookup - 41:  Print a Nicely Formatted Table
+# Lookup - 42:  Estimate or Format p-values from Monte Carlo Samples
+# Lookup - 43:  Colorblind Friendly Palette
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -2796,20 +2798,24 @@ plotTemplate = function() {
                      lnSz = 2,
                      ptSz = 1.25,
                      axSz = 1.25,
+                     axPos = -1.5,
                      lblSz = 1.15,
+                     lblPos = 1.5,
                      new = T ) {
     # Purpose:
     # ...
     # Arguments:
-    # df    - A data frame with the x and y values
-    # inc   - The spacing value for the x and y-axis limits,
-    #         respectively
-    # lbl   - The labels for the x and y-axis, respectively
-    # lnSz  - The width of the lines
-    # ptSz  - The size of the points
-    # axSz  - The text size for the axis values
-    # lblSz - The text size for the axis labels
-    # new   - Logical; if TRUE, a new plotting window is created
+    # df     - A data frame with the x and y values
+    # inc    - The spacing value for the x and y-axis limits,
+    #          respectively
+    # lbl    - The labels for the x and y-axis, respectively
+    # lnSz   - The width of the lines
+    # ptSz   - The size of the points
+    # axSz   - The text size for the axis values
+    # axPos  - The position of the axis values
+    # lblSz  - The text size for the axis labels
+    # lblPos - The position of the axis labels
+    # new    - Logical; if TRUE, a new plotting window is created
 
     # Setup
     x = df$x
@@ -2841,15 +2847,15 @@ plotTemplate = function() {
 
     # x-axis
     axis( 1, xax,
-          tick = F, line = -1.5, cex.axis = axSz )
+          tick = F, line = axPos, cex.axis = axSz )
     mtext( lbl[1],
-           side = 1, line = 1.5, cex = lblSz )
+           side = 1, line = lblPos, cex = lblSz )
 
     # y-axis
     axis( 2, yax,
-          tick = F, line = -1.5, cex.axis = axSz )
+          tick = F, line = axPos, cex.axis = axSz )
     mtext( lbl[2],
-           side = 2, line = 1.5, cex = lblSz )
+           side = 2, line = lblPos, cex = lblSz )
 
   }"
 
@@ -2859,14 +2865,17 @@ plotTemplate = function() {
 # Lookup - 41
 #' Print a Nicely Formatted Table
 #'
-#' Forthcoming...
+#' Given a data frame, prints to console
+#' a formated table of the results.
 #'
 #' @param tbl a formatted data frame.
 #' @param return logical; if \code{TRUE}, returns
 #'   the character vector with each formatted
 #'   row.
 #'
-#' @return Forthcoming...
+#' @return If \code{return} is \code{TRUE} returns the
+#' vector of character strings with the formatted output
+#' for each row of the table.
 #'
 #' @examples
 #' data( 'mtcars' )
@@ -2928,5 +2937,162 @@ printTable = function( tbl, return = F ) {
 
 }
 
+# Lookup - 42
+#' Estimate or Format p-values from Monte Carlo Samples
+#'
+#' Given a set of Monte Carlo samples, estimates a p-value
+#' from the proportion of values that fall above or below
+#' a comparison point. If \code{string} is \code{TRUE},
+#' takes a numeric p-value and converts it into a
+#' formatted character string, either 'p = ...' or
+#' 'p < ...'.
+#'
+#' @param x either 1) a vector of numeric values (Monte
+#'   Carlo samples) or 2) a single p-value.
+#' @param comparison the comparison point used to compute
+#'   the p-value for the Monte Carlo samples.
+#' @param alternative a character string, either 1) 'two-sided',
+#'   2) 'greater', or 3) 'less', indicating the type of
+#'   alternativ hypothesis to test. If 'two-sided', uses the
+#'   alternativ hypothsis that produces the smallest p-value,
+#'   and then adjusts for the two-sided comparison by multiplying
+#'   by two.
+#' @param digits the number of digits to round to when formatting
+#'   the numeric p-value
+#'
+#' @return Either a numeric p-value or a character string,
+#' a nicely formatted version of the p-value.
+#'
+#' @examples
+#' x = rnorm( 1000 )
+#' p = pvalueMC( x )
+#' print( pvalueMC( p ) )
+#' p = pvalueMC( x, alternative = 'greater' )
+#' print( pvalueMC( p ) )
+#' p = pvalueMC( x, alternative = 'less' )
+#' print( pvalueMC( p, digits = 4 ) )
+#'
+#' @export
 
+pvalueMC = function( x, comparison = 0,
+                     alternative = 'two-sided',
+                     digits = 3 ) {
+
+  # Initialize output
+  out = NULL
+
+  # Assume if siz of x equals 1 that
+  # it is a numeric p-value
+  string = FALSE
+  if ( length( x ) == 1 ) {
+
+    if ( x >= 0 &
+         x <= 1 ) {
+
+      string = TRUE
+    }
+  }
+
+  # Estimate p-value from Monte Carlo samples
+  if ( !string ) {
+
+    check = FALSE
+
+    # Two-sided test
+    if ( alternative == 'two-sided' ) {
+      check = TRUE
+
+      if ( median( x ) > comparison ) {
+        out = mean( x < comparison )
+      } else {
+        out = mean( x > comparison )
+      }
+      out = out*2
+
+    }
+
+    # Test if greater than comparison
+    if ( alternative == 'greater' ) {
+
+      check = TRUE
+
+      out = mean( x < comparison )
+
+    }
+
+    # Test if less than comparison
+    if ( alternative == 'less' ) {
+
+      check = TRUE
+
+      out = mean( x > comparison )
+
+    }
+
+    # Informative error message if
+    # alternativ misspecified
+    if ( !check ) {
+
+      err_msg = paste(
+        "Please specify 'alternative' as",
+        "either 'two-sided', 'greater', or",
+        "'less'." )
+      stop( err_msg )
+
+    }
+
+  } else {
+
+    # Convert numeric p-value into
+    # a nice string character
+    p = round( x, digits )
+    out = paste( "p = ", p, sep = "" )
+    if ( p == 0 ) {
+      nd = digits - 1
+      nd = paste(
+        "0.",
+        paste( rep( 0, nd ), collapse = '' ),
+        '1', sep = '' )
+      out = paste( "p < ", nd, sep = "" )
+    }
+
+  }
+
+  return( out )
+}
+
+# Lookup - 43
+#' Colorblind Friendly Palette
+#'
+#' Generates a set of 8 colors that are
+#' colorblind friendly.
+#'
+#' @references
+#' See http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette.
+#'
+#' @return A vector of 8 hexadecimal strings giving
+#' # colors (starting with grey) that are colorblind
+#' friendly.
+#'
+#' @examples
+#' clrs = colorblindPalette()
+#' plot( 1:8, 1:8, pch = 15, cex = 4, col = clrs )
+#'
+#' @export
+
+colorblindPalette = function() {
+
+  # The palette with grey:
+  out = c(
+    grey = "#999999",
+    orange = "#E69F00",
+    light_blue = "#56B4E9",
+    green = "#009E73",
+    yellow = "#F0E442",
+    blue = "#0072B2",
+    red = "#D55E00",
+    pink = "#CC79A7" )
+
+  return( out )
+}
 
