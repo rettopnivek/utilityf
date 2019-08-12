@@ -14,10 +14,13 @@ the character vector with each formatted
 row.}
 }
 \value{
-Forthcoming...
+If \code{return} is \code{TRUE} returns the
+vector of character strings with the formatted output
+for each row of the table.
 }
 \description{
-Forthcoming...
+Given a data frame, prints to console
+a formated table of the results.
 }
 \examples{
 data( 'mtcars' )
