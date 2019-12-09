@@ -601,7 +601,8 @@ nominalCoding = function( x, type = 'Effects',
   }
 
   if ( !type_check )
-    stop( "Need type to be either 'Dummy', 'Simple', 'Effects', 'Intercept', or 'Coef'.",
+    stop( "Need type to be either 'Dummy', 'Simple', 'Effects',
+          'Intercept', or 'Coef'.",
           call. = FALSE )
 
   return( m );
@@ -2549,9 +2550,10 @@ EZdiffusion = function( dat, s = 1 ) {
 #' Generates a heatmap of the upper triangle of a
 #' correlation matrix.
 #'
-#' @param omega a correlation matrix.
-#' @param labels the labels for the rows/columns.
+#' @param df a data frame with all variables to include
+#'   in the correlation matrix.
 #' @param ttl an optional title for the figure.
+#' @param labels the labels for the rows/columns.
 #' @param new logical; if \code{TRUE} generates a
 #'   new plotting window.
 #' @param lyt an optional matrix specifying the
@@ -2560,8 +2562,8 @@ EZdiffusion = function( dat, s = 1 ) {
 #' @param gradient the final end colors for
 #'   the negative and positive correlations, respectively.
 #' @param txtSz the size of the text in the figure.
-#' @param p_mat an optional matrix of p-values corresponding
-#'   to the correlations in \code{omega}.
+#' @param mc_adjust the method to use when correcting for
+#'   multiple comparisons (see ).
 #' @param cut_off cut-off for significance.
 #' @param H the height to use if a new plotting window is
 #'   generated.
@@ -2575,206 +2577,197 @@ EZdiffusion = function( dat, s = 1 ) {
 #' # Load data
 #' data("mtcars")
 #' my_data <- mtcars[, c(1,3,4,5,6,7)]
-#' omega = cor( my_data )
 #' # Generate heatmap
-#' correlationHeatmap( omega, colnames(omega) )
+#' correlationHeatmap( my_data, labels = colnames(my_data) )
 #'
 #' @export
 
-correlationHeatmap = function( omega,
-                               labels,
-                               ttl = 'Correlation matrix',
-                               new = T,
-                               lyt = NULL,
-                               gradient = c( 'orange',
-                                             'blue' ),
-                               txtSz = 1.25,
-                               p_mat = NULL,
-                               cut_off = .05,
-                               H = 25/3,
-                               W = 20/3 ) {
+correlationHeatmap <- function( df,
+                                ttl = "Correlation matrix",
+                                labels = NULL,
+                                new = T, lyt = NULL,
+                                gradient = c("orange", "blue"),
+                                txtSz = 1.25, mc_adjust = 'BH',
+                                cut_off = 0.05, H = 20/3, W = 25/3 ) {
 
-  # Create new plotting window if specified
-  if ( new ) {
-    x11( width = H, height = W )
-  }
+  # Compute correlations
+  omega = cor( df )
 
-  # Number of rows
-  nr = nrow( omega )
-
-  # Specify row and column indices
-  pos = seq( nrow( omega ), 0, -1 )
-
-  # Include side panel for legend
-  if ( is.null( lyt ) ) {
-    lyt = cbind( 1, 1, 1, 1, 2 )
-  }
-  layout( lyt )
-
-  # x and y-axis limits
-  xl = range( pos )
-  yl = range( pos )
-  # Adjust margins
-  mrg = c( 11, 11, .5, .5 )
-  par( mar = mrg )
-  # Create blank plot
-  blankPlot( xl, yl )
-
-  # Define function to draw a box of desired color
-  draw_box = function( ri, ci, clr = NULL, brd = NULL ) {
-
-    xa = c( ci + 1, ci + 1, ci, ci )
-    ya = c( ri, ri + 1, ri + 1, ri )
-
-    if ( is.null( clr ) ) clr = 'white'
-    if ( is.null( brd ) ) brd = clr
-
-    polygon( rev(pos)[xa], pos[ya], col = clr, border = brd )
-
-  }
-
-  # Specify color gradients
-  r_range = seq( 0, 1, .01 )
-  color_f = colorRampPalette( c( 'white', gradient[2] ) )
-  color_pos = color_f( length( r_range ) )
-  color_f = colorRampPalette( c( 'white', gradient[1] ) )
-  color_neg = color_f( length( r_range ) )
-
-  # Loop over rows and columns
-  for ( ri in 1:nr ) {
-    for ( ci in 1:nr ) {
-
-      # Extract correlation
-      cur_R = round( omega[ri,ci], 2 )
-
-      # Set gradient based on correlation value
-      if ( cur_R > 0 ) {
-        cur_clr = color_pos[ round( r_range, 2 ) ==
-                               round( cur_R, 2 ) ]
+  # Compute p-values for correlations
+  p_mat = matrix( NA, nrow( omega ), ncol( omega ) )
+  p_val = rep( NA, sum( upper.tri( omega ) ) )
+  k = 1
+  for ( i in 1:nrow( omega ) ) {
+    for( j in 1:ncol( omega ) ) {
+      if ( i != j ) {
+        tst = cor.test(
+          df[[ rownames( omega )[i] ]],
+          df[[ colnames( omega )[j] ]]
+        )
+        p_mat[i,j] = tst$p.value
+        if ( j > i ) {
+          p_val[k] = tst$p.value
+          k = k + 1
+        }
       }
-      if ( cur_R < 0 ) {
-        cur_clr = color_neg[ round( r_range, 2 ) ==
-                               round( abs(cur_R), 2 ) ]
-      }
-
-      # Suppress diagonal
-      if ( ri == ci ) {
-        cur_clr = 'white'
-      }
-
-      # Suppress lower triangle part
-      if ( ri >= ci ) {
-        cur_clr = 'white'
-      }
-
-      cur_brd = NULL
-
-      # Draw box
-      draw_box( ri, ci, clr = cur_clr, brd = cur_brd )
     }
   }
 
-  if ( !is.null( p_mat ) ) {
+  # Adjust for multiple comparisons
+  p_val = p.adjust( p_val, method = mc_adjust )
+  k = 1
+  for ( i in 1:nrow( omega ) ) {
+    for ( j in 1:ncol( omega ) ) {
+      if ( j > k ) {
+        p_mat[i,j] = p_val[k]
+        p_mat[j,i] = p_mat[i,j]
+        k = k + 1
+      }
+    }
+  }
+  diag( p_mat ) = 0
 
-    # Loop over rows and columns again
-    for ( ri in 1:nr ) {
-      for ( ci in 1:nr ) {
+  # Create new plotting window
+  if (new) {
+    x11( height = H, width = W )
+  }
 
-        # Extract correlation
-        cur_R = round( omega[ri,ci], 2 )
-        # Extract p-value
-        cur_p = p_mat[ri,ci]
-        if ( is.na( cur_p ) ) cur_p = 1
+  # Create panels for plot and color map
+  nr = nrow(omega)
+  pos = seq(nrow(omega), 0, -1)
+  if (is.null(lyt)) {
+    lyt = cbind(1, 1, 1, 1, 2)
+  }
+  layout(lyt)
 
-        # Re-draw boxes with a border
-        # only when p-value is less than cut-off
-        if ( cur_p < cut_off ) {
-          if ( ri < ci ) {
+  # Create blank plot
+  xl = range(pos)
+  yl = range(pos)
+  mrg = c(11, 11, 0.5, 0.5)
+  par(mar = mrg)
+  blankPlot(xl, yl)
 
-            # Set gradient based on correlation value
-            if ( cur_R > 0 ) {
-              cur_clr = color_pos[ round( r_range, 2 ) ==
-                                     round( cur_R, 2 ) ]
+  # Function for drawing colored box
+  draw_box = function(ri, ci, clr = NULL, brd = NULL, slash = FALSE ) {
+    xa = c(ci + 1, ci + 1, ci, ci)
+    ya = c(ri, ri + 1, ri + 1, ri)
+    if (is.null(clr))
+      clr = "white"
+    if (is.null(brd))
+      brd = clr
+    if ( !slash ) {
+      polygon(rev(pos)[xa], pos[ya], col = clr, border = brd)
+    } else {
+      segments( rev(pos)[xa][1],
+                pos[ya][1],
+                rev(pos)[xa][3],
+                pos[ya][2] )
+    }
+  }
+
+  # Color gradient
+  r_range = seq(0, 1, 0.01)
+  color_f = colorRampPalette(c("white", gradient[2]))
+  color_pos = color_f(length(r_range))
+  color_f = colorRampPalette(c("white", gradient[1]))
+  color_neg = color_f(length(r_range))
+
+  # Loop over upper triangle of correlation matrix
+  for (ri in 1:nr) {
+    for (ci in 1:nr) {
+      cur_R = round(omega[ri, ci], 2)
+      if (cur_R > 0) {
+        cur_clr = color_pos[round(r_range, 2) == round(cur_R, 2)]
+      }
+      if (cur_R < 0) {
+        cur_clr = color_neg[round(r_range, 2) == round(abs(cur_R), 2)]
+      }
+      if ( cur_R == 0 ) {
+        cur_clr = 'white'
+      }
+      if (ri == ci) {
+        cur_clr = "white"
+      }
+      if (ri >= ci) {
+        cur_clr = "white"
+      }
+      cur_brd = NULL
+      draw_box(ri, ci, clr = cur_clr, brd = cur_brd)
+    }
+  }
+
+  # Denote non-significant boxes
+  if (!is.null(p_mat)) {
+
+    for (ri in 1:nr) {
+      for (ci in 1:nr) {
+
+        cur_R = round(omega[ri, ci], 2)
+        cur_p = p_mat[ri, ci]
+        if (is.na(cur_p))
+          cur_p = 0
+
+        if (cur_p > cut_off) {
+          if (ri < ci) {
+            if (cur_R > 0) {
+              cur_clr = color_pos[round(r_range, 2) ==
+                                    round(cur_R, 2)]
             }
-            if ( cur_R < 0 ) {
-              cur_clr = color_neg[ round( r_range, 2 ) ==
-                                     round( abs(cur_R), 2 ) ]
+            if (cur_R < 0) {
+              cur_clr = color_neg[round(r_range, 2) ==
+                                    round(abs(cur_R), 2)]
             }
-            cur_brd = 'black'
 
-            # Draw box
-            draw_box( ri, ci, clr = cur_clr, brd = cur_brd )
+            cur_brd = "black"
+            draw_box(ri, ci, clr = cur_clr, brd = cur_brd, slash = T )
           }
         }
       }
     }
-
-
-    # Add label for significance cut-off
-
-    draw_box( nr, 1, clr = 'white', brd = 'black' )
-
-    text( 1.25, .5,
-          paste( 'Significant at p <', cut_off ),
-          pos = 4, cex = txtSz )
+    draw_box(nr, 1, clr = "white", brd = "black")
+    draw_box(nr, 1, clr = "white", brd = "black", slash = T )
+    text(1.25, 0.5, paste("Non-significant at p >", cut_off),
+         pos = 4, cex = txtSz)
   }
 
-  # Add labels
-  for ( ri in 1:nr ) {
-    text(
-      nr - (ri-1), ri - .5,
-      rev(labels)[ri],
-      pos = 2,
-      xpd = NA,
-      cex = txtSz )
+  if ( is.null( labels ) ) {
+    labels = colnames( omega )
   }
 
-  # Title for plot
-  mtext( ttl,
-         side = 1, line = 1, cex = txtSz )
 
-  # Add legend for color gradient
-
-  # lbl = rev( seq( -1, 1, .1 ) )
-  lbl = lowerUpper( .1, omega[ lower.tri( omega ) ] )
-  lbl = seq( lbl[1], lbl[2], .1 )
-  lbl = rev( lbl )
-  pos = rev( 0:( length( lbl ) ) )
-  xl = c( 0, 2 )
-  yl = range( pos )
-
-  par( mar = c( mrg[1], 0, mrg[3], mrg[4] ) )
-  blankPlot( xl, yl )
-
-  for ( ri in 1:length( lbl ) ) {
-
+  for (ri in 1:nr) {
+    text(nr - (ri - 1), ri - 0.5, rev(labels)[ri], pos = 2,
+         xpd = NA, cex = txtSz)
+  }
+  mtext(ttl, side = 1, line = 1, cex = txtSz)
+  lbl = lowerUpper(0.1, omega[lower.tri(omega)])
+  lbl = seq(lbl[1], lbl[2], 0.1)
+  lbl = rev(lbl)
+  pos = rev(0:(length(lbl)))
+  xl = c(0, 2)
+  yl = range(pos)
+  par(mar = c(mrg[1], 0, mrg[3], mrg[4]))
+  blankPlot(xl, yl)
+  for (ri in 1:length(lbl)) {
     cur_R = lbl[ri]
-
-    if ( cur_R > 0 ) {
-      cur_clr = color_pos[ round( r_range, 2 ) ==
-                             round( cur_R, 2 ) ]
+    if (cur_R > 0) {
+      cur_clr = color_pos[round(r_range, 2) == round(cur_R,
+                                                     2)]
     }
-    if ( cur_R < 0 ) {
-      cur_clr = color_neg[ round( r_range, 2 ) ==
-                             round( abs(cur_R), 2 ) ]
+    if (cur_R < 0) {
+      cur_clr = color_neg[round(r_range, 2) == round(abs(cur_R),
+                                                     2)]
     }
-
-    if ( cur_R == 0 ) {
-      cur_clr = 'white'
+    if (cur_R == 0) {
+      cur_clr = "white"
     }
-
-    draw_box( ri, 1, clr = cur_clr )
+    draw_box(ri, 1, clr = cur_clr)
   }
-
-  string = as.character( lbl )
-  string[ lbl > 0 ] = paste( " ", string[ lbl > 0 ] )
-  string[ lbl == 0] = " 0.0"
-
-  text( rep( txtSz, length(lbl) ),
-        pos[-1] + .5, string )
-
-  mtext( 'R',
-         side = 1, line = 1, cex = txtSz )
+  string = as.character(lbl)
+  string[lbl > 0] = paste(" ", string[lbl > 0])
+  string[lbl == 0] = " 0.0"
+  text(rep(txtSz, length(lbl)), pos[-1] + 0.5, string)
+  mtext("R", side = 1, line = 1, cex = txtSz)
 
 }
 
