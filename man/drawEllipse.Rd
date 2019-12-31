@@ -4,8 +4,18 @@
 \alias{drawEllipse}
 \title{Function to Draw Ellipses}
 \usage{
-drawEllipse(a, b, k = 0, Xc = 0, Yc = 0, deg = T, lngth = 100,
-  draw = T, ret = F, ...)
+drawEllipse(
+  a,
+  b,
+  k = 0,
+  Xc = 0,
+  Yc = 0,
+  deg = T,
+  lngth = 100,
+  draw = T,
+  ret = F,
+  ...
+)
 }
 \arguments{
 \item{a}{the length of the x-axis vertice of the ellipse.}

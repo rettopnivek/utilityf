@@ -4,10 +4,19 @@
 \alias{correlationHeatmap}
 \title{Plot a Heatmap for a Correlation Matrix}
 \usage{
-correlationHeatmap(df, ttl = "Correlation matrix", labels = NULL,
-  new = T, lyt = NULL, gradient = c("orange", "blue"),
-  txtSz = 1.25, mc_adjust = "BH", cut_off = 0.05, H = 20/3,
-  W = 25/3)
+correlationHeatmap(
+  df,
+  ttl = "Correlation matrix",
+  labels = NULL,
+  new = T,
+  lyt = NULL,
+  gradient = c("orange", "blue"),
+  txtSz = 1.25,
+  mc_adjust = "BH",
+  cut_off = 0.05,
+  H = 20/3,
+  W = 25/3
+)
 }
 \arguments{
 \item{df}{a data frame with all variables to include

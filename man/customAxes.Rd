@@ -4,10 +4,21 @@
 \alias{customAxes}
 \title{Generate Custom Plot Axes}
 \usage{
-customAxes(xl, yl, pos = c(1, 2), lnSz = 2, type = 2, label = NULL,
-  lbPos = c(2.5, 2.5, 1, 2.5), lbSz = 1.5, inc = c(0, 0, 0, 0),
-  axisLabel = NULL, axSz = 1.25, axPos = c(-1, -1, -1, -1),
-  prec = 2)
+customAxes(
+  xl,
+  yl,
+  pos = c(1, 2),
+  lnSz = 2,
+  type = 2,
+  label = NULL,
+  lbPos = c(2.5, 2.5, 1, 2.5),
+  lbSz = 1.5,
+  inc = c(0, 0, 0, 0),
+  axisLabel = NULL,
+  axSz = 1.25,
+  axPos = c(-1, -1, -1, -1),
+  prec = 2
+)
 }
 \arguments{
 \item{xl}{a vector with the lower and upper boundaries for the x-axis.}

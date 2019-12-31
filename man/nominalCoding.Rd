@@ -4,8 +4,7 @@
 \alias{nominalCoding}
 \title{Coding Schemes for Nominal Variables}
 \usage{
-nominalCoding(x, type = "Effects", levels = NULL, label = NULL,
-  weights = NULL)
+nominalCoding(x, type = "Effects", levels = NULL, label = NULL, weights = NULL)
 }
 \arguments{
 \item{x}{a vector of levels.}
