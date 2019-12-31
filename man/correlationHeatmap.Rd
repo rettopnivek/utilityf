@@ -4,16 +4,18 @@
 \alias{correlationHeatmap}
 \title{Plot a Heatmap for a Correlation Matrix}
 \usage{
-correlationHeatmap(omega, labels, ttl = "Correlation matrix", new = T,
-  lyt = NULL, gradient = c("orange", "blue"), txtSz = 1.25,
-  p_mat = NULL, cut_off = 0.05, H = 25/3, W = 20/3)
+correlationHeatmap(df, ttl = "Correlation matrix", labels = NULL,
+  new = T, lyt = NULL, gradient = c("orange", "blue"),
+  txtSz = 1.25, mc_adjust = "BH", cut_off = 0.05, H = 20/3,
+  W = 25/3)
 }
 \arguments{
-\item{omega}{a correlation matrix.}
-
-\item{labels}{the labels for the rows/columns.}
+\item{df}{a data frame with all variables to include
+in the correlation matrix.}
 
 \item{ttl}{an optional title for the figure.}
+
+\item{labels}{the labels for the rows/columns.}
 
 \item{new}{logical; if \code{TRUE} generates a
 new plotting window.}
@@ -27,8 +29,8 @@ the negative and positive correlations, respectively.}
 
 \item{txtSz}{the size of the text in the figure.}
 
-\item{p_mat}{an optional matrix of p-values corresponding
-to the correlations in \code{omega}.}
+\item{mc_adjust}{the method to use when correcting for
+multiple comparisons (see ).}
 
 \item{cut_off}{cut-off for significance.}
 
@@ -50,8 +52,7 @@ correlation matrix.
 # Load data
 data("mtcars")
 my_data <- mtcars[, c(1,3,4,5,6,7)]
-omega = cor( my_data )
 # Generate heatmap
-correlationHeatmap( omega, colnames(omega) )
+correlationHeatmap( my_data, labels = colnames(my_data) )
 
 }

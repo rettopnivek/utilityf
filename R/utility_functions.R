@@ -1587,7 +1587,10 @@ headerTemplate = function() {
     '# email: kevin.w.potter@gmail.com', '\n',
     '# Please email me directly if you ', '\n',
     '# have any questions or comments', '\n',
-    '# Last updated ', Sys.Date(),
+    '# Last updated ', Sys.Date(), '\n',
+    '\n',
+    '# Table of contents', '\n',
+    '# 1)',
     sep = '' )
   message( string )
 
