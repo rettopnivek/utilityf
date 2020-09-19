@@ -64,7 +64,7 @@ round( binarySDT( y, correct = 1 ), 2 )
 \references{
 Hautus, M. J. (1995). Corrections for extreme proportions and their
   biasing effects on estimated values of d'. Behavior Research Methods
-  Instruments, & Computers, 27(1), 46 - 51. DOI: 10.3758/BF03203619
+  Instruments, & Computers, 27(1), 46 - 51. DOI: 10.3758/BF03203619.
 
 Macmillan, N. A. & Kaplan, H. L. (1985). Detection theory analysis
   of group data: estimating sensitivity from average hit and

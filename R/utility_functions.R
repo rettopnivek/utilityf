@@ -44,18 +44,20 @@
 # Lookup - 39:  Plot a Heatmap for a Correlation Matrix
 # Lookup - 40:  Template for Standard Plotting Code
 # Lookup - 41:  Print a Nicely Formatted Table
-# Lookup - 42:  Estimate or Format p-values from Monte Carlo Samples
-# Lookup - 43:  Colorblind Friendly Palette
+# Lookup - 42:  Colorblind Friendly Palette
+# Lookup - 43:  formatNumber
+# Lookup - 44:  Estimate or Format p-values from Monte Carlo Samples
+# Lookup - 45:  Add an Axis to a Plot with Default Options
 
 # Lookup - 01
 #' Standard Error of the Mean
 #'
 #' This function calculates the standard error of the mean.
 #'
-#' @param x a vector of values.
+#' @param x A vector of values.
 #'
 #' @return Returns the estimated standard error of the mean
-#'   based on the values of x
+#'   based on the values of x.
 #'
 #' @examples
 #' 1/sqrt(1000) # True value
@@ -73,7 +75,7 @@ sem = function(x) {
 #' This function calculates the logit (log of the odds) of a set of
 #' probabilities.
 #'
-#' @param p a set of probabilities (0 <= p <= 1).
+#' @param p A set of probabilities (0 <= p <= 1).
 #'
 #' @return Returns a set of values that now lie between -Inf and Inf.
 #'
@@ -90,9 +92,9 @@ logit = function(p) {
 # Lookup - 03
 #' Logistic Function
 #'
-#' This function applies the logistic function to a set of values
+#' This function applies the logistic function to a set of values.
 #'
-#' @param x a set of values ( -Inf <= x <= Inf).
+#' @param x A set of values ( -Inf <= x <= Inf).
 #'
 #' @return Returns a set of probabilities.
 #'
@@ -1080,7 +1082,7 @@ quickDocTemplate = function() {
 #' @return A list of objects in the workspace, along with their
 #' memory usage and dimensions.
 #'
-#' @section References:
+#' @references
 #' Eddelbuettel, D. (2009). Retrieved from http://stackoverflow.com/questions/1358003/tricks-to-manage-the-available-memory-in-an-r-session
 #'
 #' @examples
@@ -1104,18 +1106,17 @@ lsos = function( ..., n = 10 ) {
 #'
 #' @return A list consisting of...
 #'   \itemize{
-#'     \item \code{n}: The number of observations.
-#'     \item \code{mean}: The mean of the data (The 1st moment).
-#'     \item \code{var}: The variance of the data (The 2nd moment).
-#'     \item \code{sd}: The standard deviation of the data.
-#'     \item \code{skew}: The skewness of the data (The 3rd moment).
-#'     \item \code{kurtosis}: The kurtosis of the data (The
-#'       fourth moment).
+#'     \item n: The number of observations.
+#'     \item mean: The mean of the data (The 1st moment).
+#'     \item var: The variance of the data (The 2nd moment).
+#'     \item sd: The standard deviation of the data.
+#'     \item skew: The skewness of the data (The 3rd moment).
+#'     \item kurtosis: The kurtosis of the data (The fourth moment).
 #'   }
 #'
-#' @section References:
+#' @references
 #' Terriberry, T. B. (2007). Computing Higher-Order Moments Online.
-#    Retrieved from https://people.xiph.org/~tterribe/notes/homs.html
+#'   Retrieved from \url{https://people.xiph.org/~tterribe/notes/homs.html}.
 #'
 #' @examples
 #' x = rnorm( 100 )
@@ -2141,7 +2142,7 @@ pow = function( x, a ) {
 #'
 #' @export
 
-my_standardize = function( x, reverse = F ) {
+standardize = function( x, reverse = F ) {
 
   if ( !reverse ) {
     m = mean( x, na.rm = T )
@@ -2298,7 +2299,7 @@ findNA = function( x, any = T ) {
 #' @references
 #' Hautus, M. J. (1995). Corrections for extreme proportions and their
 #'   biasing effects on estimated values of d'. Behavior Research Methods
-#'   Instruments, & Computers, 27(1), 46 - 51. DOI: 10.3758/BF03203619
+#'   Instruments, & Computers, 27(1), 46 - 51. DOI: 10.3758/BF03203619.
 #'
 #' Macmillan, N. A. & Kaplan, H. L. (1985). Detection theory analysis
 #'   of group data: estimating sensitivity from average hit and
@@ -2793,10 +2794,14 @@ plotTemplate = function() {
                      lbl = c( 'x-axis', 'y-axis' ),
                      lnSz = 2,
                      ptSz = 1.25,
-                     axSz = 1.25,
-                     axPos = -1.5,
-                     lblSz = 1.15,
-                     lblPos = 1.5,
+                     axSz = c( 1.25, 1.25 ),
+                     axPos = c( -1.5, -1.5 ),
+                     lblSz = c( 1.15, 1.15 ),
+                     lblPos = c( 1.5, 1.5 ),
+                     xl = NULL,
+                     yl = NULL,
+                     xax = NULL,
+                     yax = NULL,
                      new = T ) {
     # Purpose:
     # ...
@@ -2807,10 +2812,18 @@ plotTemplate = function() {
     # lbl    - The labels for the x and y-axis, respectively
     # lnSz   - The width of the lines
     # ptSz   - The size of the points
-    # axSz   - The text size for the axis values
-    # axPos  - The position of the axis values
-    # lblSz  - The text size for the axis labels
-    # lblPos - The position of the axis labels
+    # axSz   - A vector with the text sizes of the tick
+    #          label for [1] the x-axis and [2] the y-axis
+    # axPos  - The positions of the axis values for
+    #          [1] the x-axis and [2] the y-axis
+    # lblSz  - The text sizes of the axis labels for
+    #          [1] the x-axis and [2] the y-axis
+    # lblPos - The positions of the axis labels for
+    #          [1] the x-axis and [2] the y-axis
+    # xl     - The lower and upper limits for the x-axis
+    # yl     - The lower and upper limits for the y-axis
+    # xax    - The position for the tick labels on the x-axis
+    # yax    - The position for the tick labels on the y-axis
     # new    - Logical; if TRUE, a new plotting window is created
 
     # Setup
@@ -2821,12 +2834,20 @@ plotTemplate = function() {
     if ( new ) x11()
 
     # x and y-axis boundaries
-    xl = lowerUpper( inc[1], x )
-    yl = lowerUpper( inc[2], y )
+    if ( is.null( xl ) ) {
+      xl = lowerUpper( inc[1], x )
+    }
+    if ( is.null( yl ) ) {
+      yl = lowerUpper( inc[2], y )
+    }
 
     # Position of axis labels
-    xax = seq( xl[1], xl[2], inc[1] )
-    yax = seq( yl[1], yl[2], inc[2] )
+    if ( is.null( xax ) ) {
+      xax = seq( xl[1], xl[2], inc[1] )
+    }
+    if ( is.null( yax ) ) {
+      yax = seq( yl[1], yl[2], inc[2] )
+    }
 
     # Create blank plot
     blankPlot( xl, yl )
@@ -2843,15 +2864,15 @@ plotTemplate = function() {
 
     # x-axis
     axis( 1, xax,
-          tick = F, line = axPos, cex.axis = axSz )
+          tick = F, line = axPos[1], cex.axis = axSz[1] )
     mtext( lbl[1],
-           side = 1, line = lblPos, cex = lblSz )
+           side = 1, line = lblPos[1], cex = lblSz[1] )
 
     # y-axis
     axis( 2, yax,
-          tick = F, line = axPos, cex.axis = axSz )
+          tick = F, line = axPos[2], cex.axis = axSz[2] )
     mtext( lbl[2],
-           side = 2, line = lblPos, cex = lblSz )
+           side = 2, line = lblPos[2], cex = lblSz[2] )
 
   }"
 
@@ -2934,6 +2955,147 @@ printTable = function( tbl, return = F ) {
 }
 
 # Lookup - 42
+#' Colorblind Friendly Palette
+#'
+#' Generates a set of 8 colors that are
+#' colorblind friendly.
+#'
+#' @references
+#' See \url{http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette.}
+#'
+#' @return A vector of 8 hexadecimal strings giving
+#' # colors (starting with grey) that are colorblind
+#' friendly.
+#'
+#' @examples
+#' clrs = colorblindPalette()
+#' plot( 1:8, 1:8, pch = 15, cex = 4, col = clrs )
+#'
+#' @export
+
+colorblindPalette = function() {
+
+  # The palette with grey:
+  out = c(
+    grey = "#999999",
+    orange = "#E69F00",
+    light_blue = "#56B4E9",
+    green = "#009E73",
+    yellow = "#F0E442",
+    blue = "#0072B2",
+    red = "#D55E00",
+    pink = "#CC79A7" )
+
+  return( out )
+}
+
+# Lookup - 43
+#' Convert Number to Nicely Formatted Character String
+#'
+#' Provides several options to round, pad, and adjust
+#' a number to create a nicely formtted character string.
+#' Useful to ensuring matching character lengths to
+#' produce aligned values in a table.
+#'
+#' @param x A numeric value.
+#' @param decimals The number of decimal places to round to.
+#' @param begin An optional character string to add to
+#'   the beginning of the output after formatting (e.g., '+', '~').
+#' @param end An optional character string to add to
+#'   the end of the output after formatting (e.g., '\%').
+#' @param pad_left Pads the output to a minimum number
+#'   of charactesr by adding spaces to the left.
+#'
+#' @return A character string, a formatted number.
+#'
+#' @examples
+#' # Default
+#' print( format_numbers( 4.392 ) )
+#' # Rounding
+#' print( format_numbers( 4.392, decimals = 2 ) )
+#' # Trailing zeros
+#' print( format_numbers( 4, decimals = 1 ) )
+#' # Adding units
+#' print( format_numbers( 4.4, end = '%' ) )
+#' # Adding leading symbols
+#' print( format_numbers( 4.4, begin = '+' ) )
+#' # Padding left side
+#' print( format_numbers( 4.4, width = 2 ) )
+#' # Negative numbers
+#' print( format_numbers( -.4 ) )
+#' # Rounds to zero and pads appropriately
+#' print( format_numbers( -.01 ) )
+#' print( format_numbers( -.01, decimals = 0 ) )
+#'
+#' @export
+
+formatNumber = function( x, decimals = 1,
+                         begin = '', end = '',
+                         pad_left = NULL ) {
+
+
+  # Round number to specified number of decimal places
+  n = round( x, decimals )
+
+  # Convert to character string
+  n = as.character( n )
+
+  # If decimal places should be displayed
+  if ( decimals > 0 ) {
+
+    # Check if not a whole number
+    is_sep = grepl( '.', n, fixed = T )
+
+    # If is a whole number, pad with trailing
+    # zeros to specified length
+    if ( !is_sep ) {
+      n = paste0(
+        n, '.',
+        paste( rep( '0', decimals ), collapse = '' )
+      )
+    }
+
+  }
+
+  # If specified, ensure that number of characters
+  # meets a minimum length by padding to the left
+  # with extra spaces
+  if ( !is.null( pad_left ) ) {
+
+    # Extract minimum required number of characters
+    min_char = pad_left
+
+    # If decimal places are shown, make sure to
+    # adjust minimum appropriately
+    if ( decimals > 0 ) {
+      min_char = min_char + 1 + decimals
+    }
+
+    # Observed number of characters in current output
+    obs_char = nchar( n )
+
+    # If less than required, pad with extra spaces
+    if ( obs_char < min_char ) {
+
+      # Number of spaces to add for padding
+      num_to_add = min_char - obs_char
+
+      # Adjust output
+      n = paste0(
+        paste( rep( ' ', num_to_add ), collapse = '' ),
+        n
+      )
+    }
+
+  }
+
+  # Concatenate components to create output
+  out = paste0( begin, n, end )
+
+  return( out )
+}
+
+# Lookup - 44
 #' Estimate or Format p-values from Monte Carlo Samples
 #'
 #' Given a set of Monte Carlo samples, estimates a p-value
@@ -3041,15 +3203,20 @@ pvalueMC = function( x, comparison = 0,
 
     # Convert numeric p-value into
     # a nice string character
-    p = round( x, digits )
-    out = paste( "p = ", p, sep = "" )
-    if ( p == 0 ) {
+
+    p = formatNumber( x, decimals = digits )
+
+    if ( round( x, digits ) == 0 ) {
+
       nd = digits - 1
       nd = paste(
         "0.",
         paste( rep( 0, nd ), collapse = '' ),
         '1', sep = '' )
       out = paste( "p < ", nd, sep = "" )
+
+    } else {
+      out = paste0( 'p = ', p )
     }
 
   }
@@ -3057,38 +3224,40 @@ pvalueMC = function( x, comparison = 0,
   return( out )
 }
 
-# Lookup - 43
-#' Colorblind Friendly Palette
+# Lookup - 45
+#' Add an Axis to a Plot with Default Options
 #'
-#' Generates a set of 8 colors that are
-#' colorblind friendly.
+#' An extension of the base R function \code{\link[graphics]{axis}}
+#' with default parameters for a subset of the arguments.
 #'
-#' @references
-#' See http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette.
-#'
-#' @return A vector of 8 hexadecimal strings giving
-#' # colors (starting with grey) that are colorblind
-#' friendly.
-#'
-#' @examples
-#' clrs = colorblindPalette()
-#' plot( 1:8, 1:8, pch = 15, cex = 4, col = clrs )
+#' @param at The positions for the tick points.
+#' @param labels Typically a set of labels of matching length to
+#'   \code{at} to be placed at the tick points.
+#' @param side An integer specifying which side of the plot the
+#'   axis is to be drawn on. As per base R, 1 = below, 2 = left,
+#'   3 = above, and 4 = right. Defaults to below.
+#' @param tick Logical; if \code{TRUE} adds tick marks. Default
+#'   is \code{FALSE}.
+#' @param line The number of lines into the margin at which the
+#'   axis line will be drawn, if not NA.
+#' @param cex.axis The size of the text for the labels placed
+#'   at the tick points.
+#' @param ... Additional arguments passed on to the \code{\link[graphics]{axis}}
+#'   function.
 #'
 #' @export
 
-colorblindPalette = function() {
+defaultAxes = function( at, labels = TRUE, side = 1,
+                        tick = FALSE, line = -1.5,
+                        cex.axis = 1.25, ... ) {
 
-  # The palette with grey:
-  out = c(
-    grey = "#999999",
-    orange = "#E69F00",
-    light_blue = "#56B4E9",
-    green = "#009E73",
-    yellow = "#F0E442",
-    blue = "#0072B2",
-    red = "#D55E00",
-    pink = "#CC79A7" )
+  axis( side = side,
+        at = at,
+        labels = labels,
+        tick = tick,
+        line = line,
+        cex.axis = cex.axis,
+        ... )
 
-  return( out )
 }
 

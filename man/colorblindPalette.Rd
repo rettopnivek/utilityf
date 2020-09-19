@@ -21,5 +21,5 @@ plot( 1:8, 1:8, pch = 15, cex = 4, col = clrs )
 
 }
 \references{
-See http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette.
+See \url{http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette.}
 }

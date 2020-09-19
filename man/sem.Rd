@@ -7,11 +7,11 @@
 sem(x)
 }
 \arguments{
-\item{x}{a vector of values.}
+\item{x}{A vector of values.}
 }
 \value{
 Returns the estimated standard error of the mean
-  based on the values of x
+  based on the values of x.
 }
 \description{
 This function calculates the standard error of the mean.

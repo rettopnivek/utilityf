@@ -7,7 +7,7 @@
 logit(p)
 }
 \arguments{
-\item{p}{a set of probabilities (0 <= p <= 1).}
+\item{p}{A set of probabilities (0 <= p <= 1).}
 }
 \value{
 Returns a set of values that now lie between -Inf and Inf.

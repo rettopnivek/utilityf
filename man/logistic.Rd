@@ -7,13 +7,13 @@
 logistic(x)
 }
 \arguments{
-\item{x}{a set of values ( -Inf <= x <= Inf).}
+\item{x}{A set of values ( -Inf <= x <= Inf).}
 }
 \value{
 Returns a set of probabilities.
 }
 \description{
-This function applies the logistic function to a set of values
+This function applies the logistic function to a set of values.
 }
 \examples{
 logistic( c(0,-2.197225,2.1972255,-Inf,Inf) )

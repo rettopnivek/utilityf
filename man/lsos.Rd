@@ -14,13 +14,11 @@ memory usage and dimensions.
 A function created by Dirk Eddelbuettel that lists the objects
 currently in the workspace along with pertinent information.
 }
-\section{References}{
-
-Eddelbuettel, D. (2009). Retrieved from http://stackoverflow.com/questions/1358003/tricks-to-manage-the-available-memory-in-an-r-session
-}
-
 \examples{
 x = rnorm( 100 )
 lsos()
 
+}
+\references{
+Eddelbuettel, D. (2009). Retrieved from http://stackoverflow.com/questions/1358003/tricks-to-manage-the-available-memory-in-an-r-session
 }

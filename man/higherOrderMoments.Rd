@@ -12,26 +12,24 @@ higherOrderMoments(x)
 \value{
 A list consisting of...
   \itemize{
-    \item \code{n}: The number of observations.
-    \item \code{mean}: The mean of the data (The 1st moment).
-    \item \code{var}: The variance of the data (The 2nd moment).
-    \item \code{sd}: The standard deviation of the data.
-    \item \code{skew}: The skewness of the data (The 3rd moment).
-    \item \code{kurtosis}: The kurtosis of the data (The
-      fourth moment).
+    \item n: The number of observations.
+    \item mean: The mean of the data (The 1st moment).
+    \item var: The variance of the data (The 2nd moment).
+    \item sd: The standard deviation of the data.
+    \item skew: The skewness of the data (The 3rd moment).
+    \item kurtosis: The kurtosis of the data (The fourth moment).
   }
 }
 \description{
 A function to compute the first four moments (i.e., the mean,
 variance, skew, and kurtosis) for a vector of data.
 }
-\section{References}{
-
-Terriberry, T. B. (2007). Computing Higher-Order Moments Online.
-}
-
 \examples{
 x = rnorm( 100 )
 higherOrderMoments( x )
 
+}
+\references{
+Terriberry, T. B. (2007). Computing Higher-Order Moments Online.
+  Retrieved from \url{https://people.xiph.org/~tterribe/notes/homs.html}.
 }
