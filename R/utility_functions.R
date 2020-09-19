@@ -48,6 +48,7 @@
 # Lookup - 43:  formatNumber
 # Lookup - 44:  Estimate or Format p-values from Monte Carlo Samples
 # Lookup - 45:  Add an Axis to a Plot with Default Options
+# Lookup - 46:  Common Summary Statistics
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -3259,5 +3260,114 @@ defaultAxes = function( at, labels = TRUE, side = 1,
         cex.axis = cex.axis,
         ... )
 
+}
+
+# Lookup - 46
+#' Common Summary Statistics
+#'
+#' A function to compute nicely formatted common summary statistics.
+#'
+#' @param x A vector of values.
+#' @param type The type of summary statistic to compute.
+#'   \itemize{
+#'     \item 'M (SD)' for mean and standard deviation.
+#'     \item 'F (\%)' or '\% (F)' for frequency and percentages.
+#'     \item 'Mn to Mx' or 'Mn - Mx' for minimum and maximum.
+#'   }
+#' @param digits The number of digits to round to.
+#' @param pad_left The minimum number of required characters.
+#'   If the observed value is less than what is required,
+#'   adds spaces to the left.
+#' @param na.rm Logical; if \code{TRUE} removes \code{NA} values.
+#'
+#' @return A character string.
+#'
+#' @examples
+#' # Mean and standard deviation
+#' commonStats( rnorm( 100, 100, 15 ), type = 'M (SD)' )
+#'
+#' # Frequency and percentage
+#' commonStats( rbinom( 100, 1, .2 ), type = 'F (%)' )
+#' commonStats( rbinom( 100, 1, .2 ), type = '% (F)', digits = 0 )
+#'
+#' @export
+
+commonStats = function( x, type = 'M (SD)', digits = 1,
+                        pad_left = NULL, na.rm = T ) {
+
+  # Initialize output
+  out = ''
+
+  if ( na.rm ) x = x[ !is.na( x ) ]
+
+  # Mean and standard deviation
+  if ( type == 'M (SD)' ) {
+
+    if ( length( x ) > 1 ) {
+
+      m = formatNumber( mean( x ), decimals = digits, pad_left = pad_left )
+      s = formatNumber( sd( x ), decimals = digits, pad_left = pad_left )
+
+      out = paste0( m, ' (', s, ')' )
+
+    }
+
+  }
+
+  # Frequency and percentage or
+  # percentage and frequency
+  if ( type %in% c( 'F (%)', '% (F)' ) ) {
+
+    if ( length( x ) > 1 ) {
+
+      p = formatNumber( 100*mean( x ), decimals = digits,
+                        pad_left = pad_left, end = '%' )
+      f = formatNumber( sum( x ), decimals = 0, pad_left = pad_left)
+
+
+      if ( type == 'F (%)' ) {
+        out = paste0( f, ' (', p, ')' )
+      }
+      if ( type == '% (F)' ) {
+        out = paste0( p, ' (', f, ')' )
+      }
+
+    }
+
+  }
+
+  # Minimum to maximum
+  if ( type %in% c( 'Mn to Mx', 'Mn - Mx' ) ) {
+
+    if ( length(x) > 1 ) {
+
+      mn = formatNumber( min( x ), decimals = digits, pad_left = pad_left )
+      mx = formatNumber( max( x ), decimals = digits, pad_left = pad_left )
+
+      if ( type == 'Mn to Mx' ) {
+        out = paste0( mn, ' to ', mx )
+      }
+      if ( type == 'Mn - Mx' ) {
+        out = paste0( mn, ' - ', mx )
+      }
+
+    }
+
+  }
+
+  # One value to another
+  if ( type %in% c( 'A to B', 'A - B' ) ) {
+
+    if ( type == 'A to B' ) {
+      out = paste0( x[1], ' to ', x[2] )
+    }
+
+    if ( type == 'A - B' ) {
+      out = paste0( x[1], ' - ', x[2] )
+    }
+
+  }
+
+  return( out )
 }
 
