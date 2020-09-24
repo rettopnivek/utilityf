@@ -2,7 +2,7 @@
 % Please edit documentation in R/utility_functions.R
 \name{simplePiecewiseReg}
 \alias{simplePiecewiseReg}
-\title{Fit a Basic Piecewise Regresssion}
+\title{Fit a Basic Piecewise Regression}
 \usage{
 simplePiecewiseReg(x, y, breaks, ...)
 }

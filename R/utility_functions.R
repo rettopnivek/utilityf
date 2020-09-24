@@ -33,7 +33,7 @@
 # Lookup - 28:  Template for Project Headers
 # Lookup - 29:  Add Horizontal Lines to a Plot
 # Lookup - 30:  Add Vertical Lines to a Plot
-# Lookup - 31:  Fit a Basic Piecewise Regresssion
+# Lookup - 31:  Fit a Basic Piecewise Regression
 # Lookup - 32:  Add Basic Color Map to a Plot
 # Lookup - 33:  Raise a Value to a Power
 # Lookup - 34:  Custom Function to Standardize a Variable
@@ -1655,7 +1655,7 @@ vertLines = function( xval, yl, ... ) {
 }
 
 # Lookup - 31
-#' Fit a Basic Piecewise Regresssion
+#' Fit a Basic Piecewise Regression
 #'
 #' Given an indepdent and dependent variable, along
 #' with a vector of break points, fits a basic
