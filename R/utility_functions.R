@@ -2994,7 +2994,7 @@ colorblindPalette = function() {
 #' Convert Number to Nicely Formatted Character String
 #'
 #' Provides several options to round, pad, and adjust
-#' a number to create a nicely formtted character string.
+#' a number to create a nicely formatted character string.
 #' Useful to ensuring matching character lengths to
 #' produce aligned values in a table.
 #'
@@ -3005,28 +3005,29 @@ colorblindPalette = function() {
 #' @param end An optional character string to add to
 #'   the end of the output after formatting (e.g., '\%').
 #' @param pad_left Pads the output to a minimum number
-#'   of charactesr by adding spaces to the left.
+#'   of characters by adding spaces to the left.
 #'
 #' @return A character string, a formatted number.
 #'
 #' @examples
 #' # Default
-#' print( format_numbers( 4.392 ) )
+#' print( formatNumber( 4.392 ) )
 #' # Rounding
-#' print( format_numbers( 4.392, decimals = 2 ) )
+#' print( formatNumber( 4.392, decimals = 2 ) )
 #' # Trailing zeros
-#' print( format_numbers( 4, decimals = 1 ) )
+#' print( formatNumber( 4, decimals = 1 ) )
+#' print( formatNumber( 0.1, decimals = 2 ) )
 #' # Adding units
-#' print( format_numbers( 4.4, end = '%' ) )
+#' print( formatNumber( 4.4, end = '%' ) )
 #' # Adding leading symbols
-#' print( format_numbers( 4.4, begin = '+' ) )
+#' print( formatNumber( 4.4, begin = '+' ) )
 #' # Padding left side
-#' print( format_numbers( 4.4, width = 2 ) )
+#' print( formatNumber( 4.4, pad_left = 2 ) )
 #' # Negative numbers
-#' print( format_numbers( -.4 ) )
+#' print( formatNumber( -.4 ) )
 #' # Rounds to zero and pads appropriately
-#' print( format_numbers( -.01 ) )
-#' print( format_numbers( -.01, decimals = 0 ) )
+#' print( formatNumber( -.01 ) )
+#' print( formatNumber( -.01, decimals = 0 ) )
 #'
 #' @export
 
@@ -3054,6 +3055,18 @@ formatNumber = function( x, decimals = 1,
         n, '.',
         paste( rep( '0', decimals ), collapse = '' )
       )
+    } else {
+
+      nc = strsplit( as.character( n ), split = '.', fixed = T )[[1]]
+      nc = nc[-1]
+      nc = nchar( nc )
+
+      if ( nc < decimals ) {
+
+        n = paste0( n, paste( rep( '0', decimals - nc ), collapse = '' ) )
+
+      }
+
     }
 
   }
