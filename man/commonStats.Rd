@@ -12,7 +12,9 @@ commonStats(x, type = "M (SD)", digits = 1, pad_left = NULL, na.rm = T)
 \item{type}{The type of summary statistic to compute.
 \itemize{
   \item 'M (SD)' for mean and standard deviation.
-  \item 'F (\%)' or '\% (F)' for frequency and percentages.
+  \item 'F (\%)' or '\% (F)' for frequencies and percentages.
+  \item 'A (\%)' or 'A\% (B)' for converting pre-computed values
+    to nicely formatted frequencies and percentages.
   \item 'Mn to Mx' or 'Mn - Mx' for minimum and maximum.
 }}
 

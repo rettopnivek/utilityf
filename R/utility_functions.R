@@ -3284,7 +3284,9 @@ defaultAxes = function( at, labels = TRUE, side = 1,
 #' @param type The type of summary statistic to compute.
 #'   \itemize{
 #'     \item 'M (SD)' for mean and standard deviation.
-#'     \item 'F (\%)' or '\% (F)' for frequency and percentages.
+#'     \item 'F (\%)' or '\% (F)' for frequencies and percentages.
+#'     \item 'A (\%)' or 'A\% (B)' for converting pre-computed values
+#'       to nicely formatted frequencies and percentages.
 #'     \item 'Mn to Mx' or 'Mn - Mx' for minimum and maximum.
 #'   }
 #' @param digits The number of digits to round to.
@@ -3346,6 +3348,35 @@ commonStats = function( x, type = 'M (SD)', digits = 1,
       }
 
     }
+
+  }
+
+  # Formatting for frequencies and percentages that have
+  # already been calculated
+  if ( type == 'A (B%)' ) {
+
+    A = formatNumber( x[1], decimals = 0,
+                      pad_left = pad_left )
+    B = formatNumber( x[2], decimals = digits,
+                      pad_left = pad_left, end = '%' )
+    out = paste0(
+      A, ' (', B, ')'
+    )
+
+  }
+
+  # Formatting for percentages and frequencies that have
+  # already been calculated
+  if ( type == 'A% (B)' ) {
+
+    A = formatNumber( x[1], decimals = digits,
+                      pad_left = pad_left, end = '%' )
+    B = formatNumber( x[2], decimals = 0,
+                      pad_left = pad_left )
+
+    out = paste0(
+      A, ' (', B, ')'
+    )
 
   }
 
