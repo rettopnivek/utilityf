@@ -928,17 +928,26 @@ findMode = function( x, discrete = F, ... ) {
 #'
 #' Adds error bars to an already existing plot.
 #'
-#' @param pos a single value or a vector of N values, indicating
+#' @param pos A single value or a vector of N values, indicating
 #'   the position(s) at which an error bar should be drawn.
-#' @param limits a vector of 2 values or a 2 x N matrix giving the
-#'   lower and upper limits, respectively, of the uncertainty
-#'   intervals.
-#' @param flip a logical value. If true, bars are drawn horizontally
+#' @param limits A vector of 2 values or a 2 x N matrix giving the
+#'   lower and upper limits, respectively, of the error
+#'   bars.
+#' @param lb A vector of N values with the lower limits for the
+#'   error bars.
+#' @param ub A vector of N values with the upper limits for the
+#'   error bars.
+#' @param arrow Logical; if \code{TRUE}, arrows are drawn at each
+#'   position, otherwise a call is made to
+#'   \code{\link[graphics]{polygon}} to create a filled-in segment
+#'   representing the connected error bars.
+#' @param flip Logical; If \code{TRUE}, bars are drawn horizontally
 #'   instead of vertically. In this case \code{pos} denotes the
 #'   position(s) on the y-axis. Otherwise, \code{pos} denotes the
 #'   position(s) on the x-axis.
-#' @param ... additional plotting parameters for the
-#'   \code{\link[graphics]{arrows}} function.
+#' @param ... Additional plotting parameters for the
+#'   \code{\link[graphics]{arrows}} function or, if \code{arrow}
+#'   is \code{FALSE}, \code{\link[graphics]{polygon}}.
 #'
 #' @examples
 #' # Example of 95% versus 68% intervals for standard normal
@@ -949,25 +958,103 @@ findMode = function( x, discrete = F, ... ) {
 #' text( pos, limits[2,], c("95%","68%"), pos = 3 )
 #' abline(h=0)
 #'
+#' # Example of connected error bars
+#' plot( c(0,1),c(0,1),type='n',xlab=' ',ylab=' ' )
+#' errorBars( c(.2,.8),lb=c(.2,.2),ub=c(.8,.8),arrow=F,col='grey')
+#'
 #' @export
 
-errorBars = function( pos, limits, flip = F, ... ) {
+errorBars = function( pos, limits = NULL,
+                      lb = NULL, ub = NULL,
+                      arrow = T, flip = F, ... ) {
+
+  # If a vector/matrix of lower and upper boundaries is
+  # not provided
+  if ( is.null( limits ) ) {
+
+    # Check if lower and upper boundaries were provided
+    # as separate vectors
+    if ( !is.null( lb ) & !is.null( ub ) ) {
+
+      # Convert to either matrix/vector
+      if ( length( lb ) > 1 ) {
+        limits = rbind( lb, ub )
+      } else {
+        limits = c( lb, ub )
+      }
+
+    } else {
+
+      # Return an error
+      stop( paste0(
+        "Must provide the argument 'limits' or the arguments ",
+        "'lb' and 'ub' giving lower and upper limits for error bars"
+      ), call. = FALSE )
+
+    }
+
+  }
 
   if ( flip ) {
+    # If 'pos' is for y-axis positions
+
     if ( is.matrix( limits ) ) {
-      arrows( limits[1,], pos,
-              limits[2,], pos, code = 3, angle = 90, ... )
+      # If a 2 x N matrix for the lower and upper boundaries
+      # is given
+
+      if ( arrow ) {
+        # If arrows should be drawn at each position
+
+        arrows( limits[1,], pos,
+                limits[2,], pos, code = 3, angle = 90, ... )
+
+      } else {
+
+        # If positions are points on a unified polygon
+        polygon(
+          c( limits[1,], rev( limits[2,] ) ),
+          c( pos, rev( pos ) ),
+          ...
+        )
+
+      }
+
     } else {
+      # If a single set of limits was provided
+
       arrows( limits[1], pos,
               limits[2], pos, code = 3, angle = 90, ... )
+
     }
   } else {
+    # If 'pos' if for x-axis positions
+
     if ( is.matrix( limits ) ) {
-      arrows( pos, limits[1,],
-              pos, limits[2,], code = 3, angle = 90, ... )
+      # If a 2 x K matrix for the lower and upper boundaries
+      # is given
+
+      if ( arrow ) {
+        # If arrows should be drawn at each position
+
+        arrows( pos, limits[1,],
+                pos, limits[2,], code = 3, angle = 90, ... )
+      } else {
+        # If positions are points on a unified polygon
+
+        polygon(
+          c( pos, rev( pos ) ),
+          c( limits[1,], rev( limits[2,] ) ),
+          ...
+        )
+
+      }
+
     } else {
+      # If a single set of limits was provided
+
       arrows( pos, limits[1],
               pos, limits[2], code = 3, angle = 90, ... )
+
     }
   }
 
@@ -3284,10 +3371,16 @@ defaultAxes = function( at, labels = TRUE, side = 1,
 #' @param type The type of summary statistic to compute.
 #'   \itemize{
 #'     \item 'M (SD)' for mean and standard deviation.
+#'     \item 'Md (IQR)' for median and inter-quartile range.
 #'     \item 'F (\%)' or '\% (F)' for frequencies and percentages.
+#'     \item 'Q1 to Q3' or 'Q1 - Q3' or 'Q1 | Q3' for the 1st and
+#'       third quartiles.
+#'     \item 'Mn to Mx' or 'Mn - Mx' or 'Mn | Mx' for the minimum
+#'       and maximum.
 #'     \item 'A (\%)' or 'A\% (B)' for converting pre-computed values
 #'       to nicely formatted frequencies and percentages.
-#'     \item 'Mn to Mx' or 'Mn - Mx' for minimum and maximum.
+#'     \item 'A to B' or 'A - B' or 'A | B' for the range between
+#'       to pre-computed values.
 #'   }
 #' @param digits The number of digits to round to.
 #' @param pad_left The minimum number of required characters.
@@ -3301,9 +3394,18 @@ defaultAxes = function( at, labels = TRUE, side = 1,
 #' # Mean and standard deviation
 #' commonStats( rnorm( 100, 100, 15 ), type = 'M (SD)' )
 #'
+#' # Median and inter-quartile range
+#' commonStats( rgamma( 100 ), type = 'Md (IQR)' )
+#'
 #' # Frequency and percentage
 #' commonStats( rbinom( 100, 1, .2 ), type = 'F (%)' )
 #' commonStats( rbinom( 100, 1, .2 ), type = '% (F)', digits = 0 )
+#'
+#' # 1st and 3rd quartiles
+#' commonStats( rnorm( 100 ), type = 'Q1 to Q3' )
+#'
+#' # Minimum and maximum
+#' commonStats( runif( 100, -4, 4 ), type = 'Mn to Mx' )
 #'
 #' @export
 
@@ -3324,6 +3426,22 @@ commonStats = function( x, type = 'M (SD)', digits = 1,
       s = formatNumber( sd( x ), decimals = digits, pad_left = pad_left )
 
       out = paste0( m, ' (', s, ')' )
+
+    }
+
+  }
+
+  # Median and inter-quartile range
+  if ( type == 'Md (IQR)' ) {
+
+    if ( length( x ) > 1 ) {
+
+      q = quantile( x, prob = c( .25, .75 ) )
+
+      md = formatNumber( median( x ), decimals = digits, pad_left = pad_left )
+      iqr = formatNumber( diff(q), decimals = digits, pad_left = pad_left )
+
+      out = paste0( md, ' (', iqr, ')' )
 
     }
 
@@ -3351,17 +3469,53 @@ commonStats = function( x, type = 'M (SD)', digits = 1,
 
   }
 
-  # Formatting for frequencies and percentages that have
-  # already been calculated
-  if ( type == 'A (B%)' ) {
+  # Minimum to maximum
+  if ( type %in% c( 'Mn to Mx', 'Mn - Mx', 'Mn | Mx' ) ) {
 
-    A = formatNumber( x[1], decimals = 0,
-                      pad_left = pad_left )
-    B = formatNumber( x[2], decimals = digits,
-                      pad_left = pad_left, end = '%' )
-    out = paste0(
-      A, ' (', B, ')'
-    )
+    if ( length(x) > 1 ) {
+
+      mn = formatNumber( min( x ), decimals = digits, pad_left = pad_left )
+      mx = formatNumber( max( x ), decimals = digits, pad_left = pad_left )
+
+      if ( type == 'Mn to Mx' ) {
+        sep = ' to '
+      }
+      if ( type == 'Mn - Mx' ) {
+        sep = ' - '
+      }
+      if ( type == 'Mn | Mx' ) {
+        sep = ' | '
+      }
+
+      out = paste0( mn, sep, mx )
+
+    }
+
+  }
+
+  # Lower to upper quartile
+  if ( type %in% c( 'Q1 to Q3', 'Q1 - Q3', 'Q1 | Q3' ) ) {
+
+    if ( length( x ) > 1 ) {
+
+      q = quantile( x, prob = c( .25, .75 ) )
+
+      if ( type == 'Q1 to Q3' ) {
+        sep = ' to '
+      }
+      if ( type == 'Q1 - Q3' ) {
+        sep = ' - '
+      }
+      if ( type == 'Q1 | Q3' ) {
+        sep = ' | '
+      }
+
+      lb = formatNumber( q[1], decimals = digits, pad_left = pad_left )
+      ub = formatNumber( q[2], decimals = digits, pad_left = pad_left )
+
+      out = paste0( lb, sep, ub )
+
+    }
 
   }
 
@@ -3380,35 +3534,25 @@ commonStats = function( x, type = 'M (SD)', digits = 1,
 
   }
 
-  # Minimum to maximum
-  if ( type %in% c( 'Mn to Mx', 'Mn - Mx' ) ) {
-
-    if ( length(x) > 1 ) {
-
-      mn = formatNumber( min( x ), decimals = digits, pad_left = pad_left )
-      mx = formatNumber( max( x ), decimals = digits, pad_left = pad_left )
-
-      if ( type == 'Mn to Mx' ) {
-        out = paste0( mn, ' to ', mx )
-      }
-      if ( type == 'Mn - Mx' ) {
-        out = paste0( mn, ' - ', mx )
-      }
-
-    }
-
-  }
-
   # One value to another
-  if ( type %in% c( 'A to B', 'A - B' ) ) {
+  if ( type %in% c( 'A to B', 'A - B', 'A | B' ) ) {
+
+    A = formatNumber( x[1], decimals = digits,
+                      pad_left = pad_left )
+    B = formatNumber( x[2], decimals = digits,
+                      pad_left = pad_left )
 
     if ( type == 'A to B' ) {
-      out = paste0( x[1], ' to ', x[2] )
+      sep = ' to '
+    }
+    if ( type == 'A - B' ) {
+      sep = ' - '
+    }
+    if ( type == 'A | B' ) {
+      sep = ' | '
     }
 
-    if ( type == 'A - B' ) {
-      out = paste0( x[1], ' - ', x[2] )
-    }
+    out = paste0( A, sep, B )
 
   }
 

@@ -4,23 +4,35 @@
 \alias{errorBars}
 \title{Draw Error Bars}
 \usage{
-errorBars(pos, limits, flip = F, ...)
+errorBars(pos, limits = NULL, lb = NULL, ub = NULL, arrow = T, flip = F, ...)
 }
 \arguments{
-\item{pos}{a single value or a vector of N values, indicating
+\item{pos}{A single value or a vector of N values, indicating
 the position(s) at which an error bar should be drawn.}
 
-\item{limits}{a vector of 2 values or a 2 x N matrix giving the
-lower and upper limits, respectively, of the uncertainty
-intervals.}
+\item{limits}{A vector of 2 values or a 2 x N matrix giving the
+lower and upper limits, respectively, of the error
+bars.}
 
-\item{flip}{a logical value. If true, bars are drawn horizontally
+\item{lb}{A vector of N values with the lower limits for the
+error bars.}
+
+\item{ub}{A vector of N values with the upper limits for the
+error bars.}
+
+\item{arrow}{Logical; if \code{TRUE}, arrows are drawn at each
+position, otherwise a call is made to
+\code{\link[graphics]{polygon}} to create a filled-in segment
+representing the connected error bars.}
+
+\item{flip}{Logical; If \code{TRUE}, bars are drawn horizontally
 instead of vertically. In this case \code{pos} denotes the
 position(s) on the y-axis. Otherwise, \code{pos} denotes the
 position(s) on the x-axis.}
 
-\item{...}{additional plotting parameters for the
-\code{\link[graphics]{arrows}} function.}
+\item{...}{Additional plotting parameters for the
+\code{\link[graphics]{arrows}} function or, if \code{arrow}
+is \code{FALSE}, \code{\link[graphics]{polygon}}.}
 }
 \description{
 Adds error bars to an already existing plot.
@@ -33,5 +45,9 @@ limits = cbind( qnorm( c(.025,.975) ), qnorm( c(.16,.84) ) )
 errorBars( pos, limits, length = .05, lwd = 2 )
 text( pos, limits[2,], c("95\%","68\%"), pos = 3 )
 abline(h=0)
+
+# Example of connected error bars
+plot( c(0,1),c(0,1),type='n',xlab=' ',ylab=' ' )
+errorBars( c(.2,.8),lb=c(.2,.2),ub=c(.8,.8),arrow=F,col='grey')
 
 }

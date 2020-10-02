@@ -12,10 +12,16 @@ commonStats(x, type = "M (SD)", digits = 1, pad_left = NULL, na.rm = T)
 \item{type}{The type of summary statistic to compute.
 \itemize{
   \item 'M (SD)' for mean and standard deviation.
+  \item 'Md (IQR)' for median and inter-quartile range.
   \item 'F (\%)' or '\% (F)' for frequencies and percentages.
+  \item 'Q1 to Q3' or 'Q1 - Q3' or 'Q1 | Q3' for the 1st and
+    third quartiles.
+  \item 'Mn to Mx' or 'Mn - Mx' or 'Mn | Mx' for the minimum
+    and maximum.
   \item 'A (\%)' or 'A\% (B)' for converting pre-computed values
     to nicely formatted frequencies and percentages.
-  \item 'Mn to Mx' or 'Mn - Mx' for minimum and maximum.
+  \item 'A to B' or 'A - B' or 'A | B' for the range between
+    to pre-computed values.
 }}
 
 \item{digits}{The number of digits to round to.}
@@ -36,8 +42,17 @@ A function to compute nicely formatted common summary statistics.
 # Mean and standard deviation
 commonStats( rnorm( 100, 100, 15 ), type = 'M (SD)' )
 
+# Median and inter-quartile range
+commonStats( rgamma( 100 ), type = 'Md (IQR)' )
+
 # Frequency and percentage
 commonStats( rbinom( 100, 1, .2 ), type = 'F (\%)' )
 commonStats( rbinom( 100, 1, .2 ), type = '\% (F)', digits = 0 )
+
+# 1st and 3rd quartiles
+commonStats( rnorm( 100 ), type = 'Q1 to Q3' )
+
+# Minimum and maximum
+commonStats( runif( 100, -4, 4 ), type = 'Mn to Mx' )
 
 }
