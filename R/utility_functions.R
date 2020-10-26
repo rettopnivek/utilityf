@@ -3370,7 +3370,7 @@ defaultAxes = function( at, labels = TRUE, side = 1,
 #' @param x A vector of values.
 #' @param type The type of summary statistic to compute.
 #'   \itemize{
-#'     \item 'M (SD)' for mean and standard deviation.
+#'     \item 'M (SD)' or 'M = A, SD = B' for mean and standard deviation.
 #'     \item 'Md (IQR)' for median and inter-quartile range.
 #'     \item 'F (\%)' or '\% (F)' for frequencies and percentages.
 #'     \item 'Q1 to Q3' or 'Q1 - Q3' or 'Q1 | Q3' for the 1st and
@@ -3426,6 +3426,21 @@ commonStats = function( x, type = 'M (SD)', digits = 1,
       s = formatNumber( sd( x ), decimals = digits, pad_left = pad_left )
 
       out = paste0( m, ' (', s, ')' )
+
+    }
+
+  }
+
+
+  # Mean and standard deviation
+  if ( type == 'M = A, SD = B' ) {
+
+    if ( length( x ) > 1 ) {
+
+      m = formatNumber( mean( x ), decimals = digits, pad_left = pad_left )
+      s = formatNumber( sd( x ), decimals = digits, pad_left = pad_left )
+
+      out = paste0( 'M = ', m, ', SD = ', s )
 
     }
 

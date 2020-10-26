@@ -11,7 +11,7 @@ commonStats(x, type = "M (SD)", digits = 1, pad_left = NULL, na.rm = T)
 
 \item{type}{The type of summary statistic to compute.
 \itemize{
-  \item 'M (SD)' for mean and standard deviation.
+  \item 'M (SD)' or 'M = A, SD = B' for mean and standard deviation.
   \item 'Md (IQR)' for median and inter-quartile range.
   \item 'F (\%)' or '\% (F)' for frequencies and percentages.
   \item 'Q1 to Q3' or 'Q1 - Q3' or 'Q1 | Q3' for the 1st and
