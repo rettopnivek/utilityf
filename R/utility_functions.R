@@ -45,10 +45,11 @@
 # Lookup - 40:  Template for Standard Plotting Code
 # Lookup - 41:  Print a Nicely Formatted Table
 # Lookup - 42:  Colorblind Friendly Palette
-# Lookup - 43:  formatNumber
+# Lookup - 43:  Convert Number to Nicely Formatted Character String
 # Lookup - 44:  Estimate or Format p-values from Monte Carlo Samples
 # Lookup - 45:  Add an Axis to a Plot with Default Options
 # Lookup - 46:  Common Summary Statistics
+# Lookup - 47:  Nicely Formatted Histogram
 
 # Lookup - 01
 #' Standard Error of the Mean
@@ -3573,4 +3574,68 @@ commonStats = function( x, type = 'M (SD)', digits = 1,
 
   return( out )
 }
+
+# Lookup - 47
+#' Nicely Formatted Histogram
+#'
+#' An extension of the \code{\link[graphics]{hist}}
+#' function that generates a nicely formatted figure with
+#' additional details on common summary statistics
+#' (mean, median, quartiles, and 2.5% to 97.5% end-points).
+#'
+#' @param x A vector of values.
+#' @param col The color used to fill the bars.
+#' @param border The color of the border of the bars.
+#' @param main The title of the figure.
+#' @param xlab The x-axis label.
+#' @param breaks See \code{\link[graphics]{hist}}.
+#' @param tck The size of the axis ticks.
+#' @param ... Additional parameters for the
+#'   \code{\link[graphics]{hist}} function.
+#'
+#' @examples
+#'
+#' histogram( rnorm( 100 ) )
+#'
+#' @export
+
+histogram = function( x, col = 'grey', border = 'white',
+                      main = '', xlab = 'Values',
+                      breaks = 'FD',
+                      tck = 0, ... ) {
+
+  n = length( x )
+
+  # Remove missing values
+  x = x[ !is.na( x ) ]
+  n[2] = length( x )
+
+  hst = hist(
+    x, breaks = breaks,
+    xlab = xlab, col = col,
+    border = border, main = main,
+    tck = tck, ...
+  )
+
+  y = rep( -diff( range( hst$counts ) )*.02, n[2] )
+
+  points( x, y,
+          pch = '|', col = rgb( 0, 0, 0, .33 ), cex = .9 )
+
+  points( mean( x ), y[1]*3.25,
+          pch = '|', col = 'black', cex = 1, xpd = NA )
+  points( quantile( x, c( .5 ) ), y[1]*3.25,
+          pch = '^', col = 'black', cex = 1.5, xpd = NA )
+
+  points( quantile( x, c( .25 ) ), y[1]*3.25,
+          pch = '[', col = 'black', cex = 1, xpd = NA )
+  points( quantile( x, c( .75 ) ), y[1]*3.25,
+          pch = ']', col = 'black', cex = 1, xpd = NA )
+  points( quantile( x, c( .025 ) ), y[1]*3.25,
+          pch = '-', col = 'black', cex = 1, xpd = NA )
+  points( quantile( x, c( .975 ) ), y[1]*3.25,
+          pch = '-', col = 'black', cex = 1, xpd = NA )
+
+}
+
 
